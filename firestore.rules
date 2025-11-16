@@ -1,0 +1,188 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ---------- Helpers ----------
+    function isAuthed() { return request.auth != null; }
+    function isOwner(userId) { return isAuthed() && request.auth.uid == userId; }
+
+    // ---------- Users ----------
+    match /users/{uid} {
+      allow read, create, update: if isOwner(uid);
+      allow delete: if false; // prevent accidental deletes from client
+    }
+
+    // ---------- Institutions ----------
+    // Allows an authenticated user to create an institution with themselves as admin.
+    // Admin can read/update/delete. Optionally, members linked by users/{uid}.institutionId could be granted read later.
+    match /institutions/{institutionId} {
+      allow create: if isAuthed()
+        && request.resource.data.adminId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.createdAt is number;
+
+      // Keep conservative: admin may read. You can extend to members if needed.
+      allow read: if isAuthed() && resource.data.adminId == request.auth.uid;
+
+      // Only the admin can modify/delete the institution doc.
+      allow update, delete: if isAuthed() && resource.data.adminId == request.auth.uid;
+    }
+
+    // ---------- Quizzes ----------
+    match /quizzes/{quizId} {
+      allow create: if isAuthed() && request.resource.data.userId == request.auth.uid;
+      // TEMP: broaden read so students can load assigned quizzes even if not public
+      // TODO: tighten to membership-based check (exists assignment referencing quiz for a class the user belongs to)
+      allow read: if isAuthed();
+      allow update, delete: if isAuthed() && resource.data.userId == request.auth.uid;
+    }
+
+    // ---------- Quiz Results ----------
+    match /quizResults/{resultId} {
+      allow create: if isAuthed()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.quizId is string
+        && request.resource.data.score is number
+        && request.resource.data.total is number;
+
+      // Read if:
+      // - The result belongs to the user, OR
+      // - The user owns the underlying quiz, OR
+      // - The user owns the class associated to the assignment this result belongs to
+      allow read: if isAuthed() && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/quizzes/$(resource.data.quizId)).data.userId == request.auth.uid ||
+        (
+          resource.data.assignmentId != null &&
+          // Check assignment exists and resolve its classId
+          get(/databases/$(database)/documents/assignments/$(resource.data.assignmentId)).data.classId is string &&
+          // Verify the requesting user owns that class
+          get(/databases/$(database)/documents/classes/$(get(/databases/$(database)/documents/assignments/$(resource.data.assignmentId)).data.classId)).data.ownerId == request.auth.uid
+        )
+      );
+      allow update, delete: if false;
+    }
+
+    // ---------- Classes ----------
+    match /classes/{classId} {
+      allow create: if isAuthed() && request.resource.data.ownerId == request.auth.uid;
+      allow read: if isAuthed();
+      allow update, delete: if isAuthed() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ---------- Class Members (flat collection) ----------
+    match /classMembers/{memberId} {
+      allow create: if isAuthed()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId is string
+        && exists(/databases/$(database)/documents/classes/$(request.resource.data.classId));
+
+      allow read: if isAuthed() && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/classes/$(resource.data.classId)).data.ownerId == request.auth.uid
+      );
+      allow delete: if isAuthed() && resource.data.userId == request.auth.uid;
+      allow update: if isAuthed() && get(/databases/$(database)/documents/classes/$(resource.data.classId)).data.ownerId == request.auth.uid;
+    }
+
+    // ---------- Assignments ----------
+    match /assignments/{assignmentId} {
+      allow create: if isAuthed()
+        && request.resource.data.classId is string
+        && get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.ownerId == request.auth.uid;
+
+      allow read: if isAuthed();
+
+      allow update, delete: if isAuthed() && get(/databases/$(database)/documents/classes/$(resource.data.classId)).data.ownerId == request.auth.uid;
+    }
+  }
+}
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ---------- Helpers ----------
+    function isAuthed() { return request.auth != null; }
+    function isOwner(userId) { return isAuthed() && request.auth.uid == userId; }
+
+    // Prefer using resource.data in read rules (query-friendly) and avoid get()/exists() where possible.
+
+    // ---------- Users ----------
+    match /users/{uid} {
+      allow read, create, update: if isOwner(uid);
+      allow delete: if false; // prevent accidental deletes from client
+    }
+
+    // ---------- Quizzes ----------
+    match /quizzes/{quizId} {
+      // Create must set userId to auth uid.
+      allow create: if isAuthed() && request.resource.data.userId == request.auth.uid;
+      // TEMP broaden: allow any authed user to read so assignments work for students.
+      // TODO tighten with membership-aware rule.
+      allow read: if isAuthed();
+      // Update/delete: only owner.
+      allow update, delete: if isAuthed() && resource.data.userId == request.auth.uid;
+    }
+
+    // ---------- Quiz Results ----------
+    match /quizResults/{resultId} {
+      // Create: user can only write their own result. Required fields enforced.
+      allow create: if isAuthed()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.quizId is string
+        && request.resource.data.score is number
+        && request.resource.data.total is number;
+
+      // Read: owner of the result, or owner of the underlying quiz.
+      // The first clause is query-friendly for where(userId == uid).
+      allow read: if isAuthed() && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/quizzes/$(resource.data.quizId)).data.userId == request.auth.uid
+      );
+      allow update, delete: if false;
+    }
+
+    // ---------- Classes ----------
+    match /classes/{classId} {
+      allow create: if isAuthed() && request.resource.data.ownerId == request.auth.uid;
+      // TEMP: allow read for any signed-in user so students can read class details
+      // without requiring a predictable membership doc path. We can tighten later
+      // once membership docs are written to a deterministic path.
+      allow read: if isAuthed();
+      // Manage: only owner
+      allow update, delete: if isAuthed() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ---------- Class Members (flat collection) ----------
+    match /classMembers/{memberId} {
+      // Create: member joins; ensure class exists
+      allow create: if isAuthed()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.classId is string
+        && exists(/databases/$(database)/documents/classes/$(request.resource.data.classId));
+
+      // Read: member themselves or class owner
+      allow read: if isAuthed() && (
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/classes/$(resource.data.classId)).data.ownerId == request.auth.uid
+      );
+      // Allow member to delete their own membership
+      allow delete: if isAuthed() && resource.data.userId == request.auth.uid;
+      // Updates restricted to class owner
+      allow update: if isAuthed() && get(/databases/$(database)/documents/classes/$(resource.data.classId)).data.ownerId == request.auth.uid;
+    }
+
+    // ---------- Assignments ----------
+    match /assignments/{assignmentId} {
+      // Create: class owner only; must target an existing class
+      allow create: if isAuthed()
+        && request.resource.data.classId is string
+        && get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.ownerId == request.auth.uid;
+
+      // TEMP: Read for any signed-in user so students can load assigned quizzes
+      // while we keep membership storage simple. Tighten later when needed.
+      allow read: if isAuthed();
+
+      // Update/delete: class owner only
+      allow update, delete: if isAuthed() && get(/databases/$(database)/documents/classes/$(resource.data.classId)).data.ownerId == request.auth.uid;
+    }
+  }
+}
