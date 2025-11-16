@@ -1,10 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "Pricing – QuizTheory",
@@ -12,159 +6,64 @@ export const metadata = {
 };
 
 export default function PricingPage() {
-  const router = useRouter();
-  const [loadingKey, setLoadingKey] = useState<string | null>(null);
-
-  const startCheckout = async (priceKey: string) => {
-    setLoadingKey(priceKey);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceKey }),
-      });
-      const json = await res.json();
-      if (json.url) {
-        // Use router for client navigation (works for external URLs too)
-        router.push(json.url);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingKey(null);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50">
-      <div className="max-w-5xl mx-auto py-20 px-6 md:px-10">
-        <div className="text-center mb-14 space-y-3">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Pricing</h1>
-          <p className="text-zinc-400 max-w-2xl mx-auto text-sm md:text-base">Simple plans while we finish Stripe integration. Start learning faster today.</p>
+      {/* Hero */}
+      <section className="relative px-4 pt-16 pb-8 text-center">
+        <div aria-hidden className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-28 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
         </div>
-        <div className="grid gap-8 md:grid-cols-3">
-          <PlanCard
-            name="Free"
-            price="£0"
-            blurb="Get started at no cost"
-            features={[
-              "Generate up to 3 quizzes",
-              "Upload text, PDFs & photos",
-              "Basic AI speed",
-            ]}
-            ctaLabel="Get Started"
-            href="/auth"
-            highlight={false}
-          />
-          <PlanCard
-            name="Pro"
-            price="£19"
-            blurb="For power learners & teams"
-            features={[
-              "Unlimited quizzes",
-              "Faster AI responses",
-              "Share public quiz links",
-              "Coming soon: class management",
-            ]}
-            ctaLabel={loadingKey === "pro" ? "Redirecting…" : "Upgrade"}
-            onClick={() => startCheckout("pro")}
-            loading={loadingKey === "pro"}
-            highlight
-          />
-          <PlanCard
-            name="Teacher"
-            price="£39"
-            blurb="For educators and tutors"
-            features={[
-              "Unlimited quizzes",
-              "Priority AI performance",
-              "Classroom sharing",
-              "Advanced results & analytics",
-            ]}
-            ctaLabel={loadingKey === "teacher" ? "Redirecting…" : "Upgrade"}
-            onClick={() => startCheckout("teacher")}
-            loading={loadingKey === "teacher"}
-          />
-          <PlanCard
-            name="Institution"
-            price="Custom"
-            blurb="For schools and teams"
-            features={[
-              "All Teacher features",
-              "Bulk onboarding",
-              "Advanced admin controls",
-              "Priority support",
-            ]}
-            ctaLabel={loadingKey === "institution_small" ? "Redirecting…" : "Contact / Upgrade"}
-            onClick={() => startCheckout("institution_small")}
-            loading={loadingKey === "institution_small"}
-          />
-        </div>
-      </div>
-    </main>
-  );
-}
+        <h1 className="relative z-10 text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">Pricing</h1>
+        <p className="relative z-10 mt-3 text-zinc-300 text-sm md:text-base max-w-2xl mx-auto">
+          Simple, transparent plans while we finish subscriptions. Start free and upgrade when ready.
+        </p>
+      </section>
 
-function PlanCard({
-  name,
-  price,
-  blurb,
-  features,
-  ctaLabel,
-  href,
-  onClick,
-  loading,
-  highlight,
-}: {
-  name: string;
-  price: string;
-  blurb: string;
-  features: string[];
-  ctaLabel: string;
-  href?: string;
-  onClick?: () => void;
-  loading?: boolean;
-  highlight?: boolean;
-}) {
-  return (
-    <Card className={`relative overflow-hidden rounded-3xl border ${highlight ? "border-violet-600/50 bg-zinc-900/50" : "border-zinc-800 bg-zinc-900/40"} backdrop-blur-sm flex flex-col`}>
-      {highlight && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 -right-32 w-72 h-72 rounded-full bg-linear-to-tr from-violet-600/30 to-fuchsia-500/20 blur-3xl" />
+      {/* Plans */}
+      <section className="relative z-10 max-w-5xl mx-auto px-4 md:px-6 pb-24">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Free */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-sm p-6 flex flex-col">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">Free</h2>
+              <div className="text-lg text-zinc-400">£0<span className="text-xs ml-1 text-zinc-500">/mo</span></div>
+            </div>
+            <p className="mt-1 text-sm text-zinc-400">Everything you need to try QuizTheory.</p>
+            <ul className="mt-4 space-y-2 text-sm text-zinc-300">
+              <li className="flex gap-2"><span className="text-violet-400">•</span><span>Generate up to 3 quizzes</span></li>
+              <li className="flex gap-2"><span className="text-violet-400">•</span><span>Text to quiz</span></li>
+              <li className="flex gap-2"><span className="text-violet-400">•</span><span>Share public quiz links</span></li>
+            </ul>
+            <div className="mt-6">
+              <Link href="/auth" className="inline-flex items-center justify-center h-10 rounded-md px-5 text-sm font-medium border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 transition">
+                Start free
+              </Link>
+            </div>
+          </div>
+
+          {/* Pro */}
+          <div className="relative rounded-2xl border border-violet-600/40 bg-zinc-900/50 backdrop-blur-sm p-6 flex flex-col overflow-hidden">
+            <div aria-hidden className="absolute inset-0 pointer-events-none">
+              <div className="absolute -top-24 -right-24 size-72 rounded-full bg-linear-to-tr from-violet-600/30 to-fuchsia-500/20 blur-3xl" />
+            </div>
+            <div className="flex items-baseline justify-between relative z-10">
+              <h2 className="text-2xl font-semibold tracking-tight">Pro</h2>
+              <div className="text-lg text-zinc-300">£19<span className="text-xs ml-1 text-zinc-500">/mo</span></div>
+            </div>
+            <p className="mt-1 text-sm text-zinc-300 relative z-10">For power learners. Subscriptions are coming soon.</p>
+            <ul className="mt-4 space-y-2 text-sm text-zinc-200 relative z-10">
+              <li className="flex gap-2"><span className="text-violet-300">•</span><span>Unlimited quizzes</span></li>
+              <li className="flex gap-2"><span className="text-violet-300">•</span><span>PDF & image to quiz</span></li>
+              <li className="flex gap-2"><span className="text-violet-300">•</span><span>Faster generation</span></li>
+            </ul>
+            <div className="mt-6 relative z-10">
+              <Link href="/auth" className="inline-flex items-center justify-center h-10 rounded-md px-5 text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition">
+                Join waitlist
+              </Link>
+            </div>
+          </div>
         </div>
-      )}
-      <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl font-semibold tracking-tight flex items-baseline gap-3">
-          {name}
-          <span className="text-lg font-medium text-zinc-400">{price}<span className="text-xs ml-1 font-normal text-zinc-500">/mo</span></span>
-        </CardTitle>
-        <div className="text-sm text-zinc-400">{blurb}</div>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col">
-        <ul className="space-y-2 mb-6 text-sm text-zinc-300">
-          {features.map(f => (
-            <li key={f} className="flex gap-2">
-              <span className="text-violet-400">•</span>
-              <span>{f}</span>
-            </li>
-          ))}
-        </ul>
-        {onClick ? (
-          <Button
-            size="lg"
-            className={`mt-auto font-semibold ${highlight ? "bg-violet-600 hover:bg-violet-500 text-white" : ""}`}
-            variant={highlight ? undefined : "outline"}
-            onClick={onClick}
-            disabled={!!loading}
-          >
-            {ctaLabel}
-          </Button>
-        ) : (
-          <Button asChild size="lg" className={`mt-auto font-semibold ${highlight ? "bg-violet-600 hover:bg-violet-500 text-white" : ""}`} variant={highlight ? undefined : "outline"}>
-            <Link href={href ?? "/auth"}>{ctaLabel}</Link>
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+      </section>
+    </main>
   );
 }
