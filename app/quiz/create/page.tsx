@@ -178,9 +178,9 @@ export default function CreateQuizPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50">
+    <main className="min-h-screen bg-zinc-950 text-zinc-50 px-4 w-full max-w-screen-sm mx-auto">
       {/* Hero header to match homepage/auth */}
-      <section className="relative flex flex-col justify-center items-center gap-4 text-center px-6 md:px-12 pt-28 pb-10">
+      <section className="relative flex flex-col justify-center items-center gap-4 text-center px-4 pt-20 pb-8 w-full">
         <div aria-hidden className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
         </div>
@@ -192,7 +192,7 @@ export default function CreateQuizPage() {
         </p>
       </section>
 
-      <div className="max-w-5xl mx-auto px-4 pb-14 space-y-6">
+  <div className="mx-auto pb-10 space-y-6 w-full">
         <Card>
           <CardHeader>
             <CardTitle>Quiz Preview</CardTitle>

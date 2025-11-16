@@ -66,9 +66,9 @@ export default function InstitutionSignupPage() {
   };
 
   return (
-    <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen">
+    <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen px-4 w-full max-w-screen-sm mx-auto">
       {/* Hero (matches /auth style) */}
-      <section className="relative flex flex-col justify-center items-center gap-8 text-center px-6 md:px-12 pb-24 pt-40 min-h-screen">
+      <section className="relative flex flex-col justify-center items-center gap-8 text-center px-4 pb-20 pt-32 min-h-screen w-full">
         {/* Decorative gradient */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />

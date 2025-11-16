@@ -311,7 +311,7 @@ export default function QuizTakingPage() {
   if (finished) {
     return (
       <AppShell>
-        <div className="max-w-3xl mx-auto p-6 space-y-4">
+    <div className="mx-auto p-4 space-y-4 w-full max-w-screen-sm">
           <Card>
             <CardHeader>
               <CardTitle>Quiz Complete</CardTitle>
@@ -363,7 +363,8 @@ export default function QuizTakingPage() {
 
   return (
     <AppShell>
-      <div className="max-w-3xl mx-auto p-6 space-y-4">
+  {/* ...existing code... */}
+  <div className="mx-auto p-4 space-y-4 w-full max-w-screen-sm">
         <div ref={questionCardRef}>
         <Card>
           <CardHeader>

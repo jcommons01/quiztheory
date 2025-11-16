@@ -6,10 +6,10 @@ import TopNav from "@/components/marketing/top-nav";
 // Server component (no "use client")
 export default function LandingPage() {
   return (
-    <main className="bg-zinc-950 text-zinc-50 flex flex-col min-h-screen">
+  <main className="bg-zinc-950 text-zinc-50 flex flex-col min-h-screen px-4 w-full max-w-screen-sm mx-auto">
       <TopNav />
       {/* Hero Section */}
-      <section className="relative isolate flex flex-col items-center justify-center min-h-screen px-6 py-24 text-center overflow-hidden">
+  <section className="relative isolate flex flex-col items-center justify-center min-h-screen px-4 py-16 text-center overflow-hidden w-full">
         <div className="absolute inset-0 -z-10 bg-linear-to-br from-zinc-900 via-zinc-800 to-zinc-900" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 size-160 bg-linear-to-tr from-violet-600/20 via-fuchsia-500/10 to-transparent rounded-full blur-3xl opacity-50" aria-hidden />
         <h1 className="text-5xl md:text-6xl font-bold tracking-tight max-w-4xl bg-clip-text text-transparent bg-linear-to-r from-zinc-100 to-zinc-400">
@@ -29,7 +29,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="px-6 md:px-10 py-16 md:py-24 bg-zinc-950">
+  <section className="px-4 py-10 bg-zinc-950 w-full">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-10 sm:grid-cols-3">
             <Feature title="Text → Quiz" description="Paste notes or summaries and instantly generate question sets." />
@@ -40,7 +40,7 @@ export default function LandingPage() {
       </section>
 
       {/* Audience Section */}
-      <section className="px-6 md:px-10 pb-24">
+  <section className="px-4 pb-16 w-full">
         <div className="mx-auto max-w-5xl text-center">
           <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-6">Who it&apos;s for</h2>
           <ul className="flex flex-wrap items-center justify-center gap-6 text-zinc-300 text-lg">

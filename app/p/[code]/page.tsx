@@ -93,8 +93,8 @@ export default function PublicQuizPage() {
   const percent = total ? Math.round((correctCount / total) * 100) : 0
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center px-4">
-      <div className="max-w-3xl w-full space-y-6 py-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center px-4 w-full max-w-screen-sm mx-auto">
+      <div className="w-full space-y-6 py-8">
         <Card>
           <CardHeader>
             <CardTitle>{quiz?.title || (notFound ? "Quiz not found" : "Shared Quiz")}</CardTitle>

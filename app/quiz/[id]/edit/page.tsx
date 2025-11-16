@@ -279,7 +279,7 @@ export default function EditQuizPage() {
 
   return (
     <AppShell>
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="mx-auto p-4 space-y-6 w-full max-w-screen-sm">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={() => router.push(`/quiz/${id}`)}>

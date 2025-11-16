@@ -42,7 +42,7 @@ export default function JoinByCodePage() {
   }, [code, router]);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center px-6">
+  <main className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center px-4 w-full max-w-screen-sm mx-auto">
       <div className="text-sm text-zinc-300">{status}</div>
     </main>
   );

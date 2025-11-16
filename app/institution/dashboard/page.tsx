@@ -61,14 +61,14 @@ export default function InstitutionDashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center">
+  <main className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center px-4 w-full max-w-screen-sm mx-auto">
         <div className="text-sm text-zinc-400">Loading…</div>
       </main>
     );
   }
 
   return (
-    <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen">
+  <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen px-4 w-full max-w-screen-sm mx-auto">
       {/* Hero to match app style */}
       <section className="relative flex flex-col justify-center items-center gap-4 text-center px-6 md:px-12 pt-28 pb-10">
         <div aria-hidden className="absolute inset-0 pointer-events-none">

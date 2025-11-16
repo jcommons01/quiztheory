@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 // Server Component (no "use client")
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50">
-      <div className="max-w-3xl mx-auto py-10 px-4 space-y-8">
+    <main className="min-h-screen bg-zinc-950 text-zinc-50 px-4 w-full max-w-screen-sm mx-auto">
+      <div className="mx-auto py-8 space-y-8 w-full">
         <header className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">Terms of Use</h1>
           <p className="text-sm text-zinc-400">Last updated: {new Date().getFullYear()}</p>
