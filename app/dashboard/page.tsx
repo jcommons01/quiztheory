@@ -1,10 +1,57 @@
+// Upgrade to Pro button for Stripe checkout
+"use client";
+import { useState } from "react";
+import { auth } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+
+function UpgradeToProButton() {
+  const [loading, setLoading] = useState(false);
+
+  const handleUpgrade = async () => {
+    const user = auth.currentUser;
+    if (!user || !user.email) {
+      // maybe redirect to /auth
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          email: user.email,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("No checkout URL returned", data);
+      }
+    } catch (err) {
+      console.error("Upgrade error", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      onClick={handleUpgrade}
+      disabled={loading}
+      className="w-full sm:w-auto bg-violet-600 hover:bg-violet-500 mt-2"
+    >
+      {loading ? "Redirecting…" : "Upgrade to Pro"}
+    </Button>
+  );
+}
 "use client"
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -26,7 +73,6 @@ import {
   setQuizPublicId,
   generatePublicId
 } from "@/lib/firestore"
-import { auth } from "@/lib/firebase"
 import AppShell from "@/components/layout/app-shell"
 
 export default function DashboardPage() {
@@ -390,9 +436,12 @@ export default function DashboardPage() {
             </div>
           )}
           {!isProOrAbove && (
-            <div className="relative z-10 mt-2 text-[11px] text-amber-300 bg-amber-900/30 border border-amber-800 rounded px-2 py-1">
-              Free plan: 3 quizzes per month. Upgrade to unlock PDF & image to quiz.
-            </div>
+            <>
+              <div className="relative z-10 mt-2 text-[11px] text-amber-300 bg-amber-900/30 border border-amber-800 rounded px-2 py-1">
+                Free plan: 3 quizzes per month. Upgrade to unlock PDF & image to quiz.
+              </div>
+              <UpgradeToProButton />
+            </>
           )}
         </section>
 

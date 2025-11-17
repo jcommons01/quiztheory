@@ -61,6 +61,8 @@ export interface UserProfile {
   subscriptionTier: SubscriptionTier;
   institutionId?: string | null;
   createdAt: number;
+  freeQuizCountThisMonth?: number;
+  freeQuizLastUpdatedAt?: number;
 }
 
 export async function createUserProfile(profile: UserProfile) {

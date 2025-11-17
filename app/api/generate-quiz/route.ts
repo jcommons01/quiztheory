@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { getUserProfile } from "@/lib/firestore";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firestore";
 export const runtime = "nodejs";
 
 // Node.js runtime ensures OpenAI and any Node libs function correctly
@@ -28,7 +31,7 @@ function isValidDifficulty(v: unknown): v is Difficulty {
 }
 
 export async function POST(req: Request) {
-  let body: Partial<GenerateQuizRequestBody>;
+  let body: Partial<GenerateQuizRequestBody & { userId?: string }>;
 
   try {
     body = await req.json();
@@ -39,6 +42,29 @@ export async function POST(req: Request) {
   const content = typeof body?.content === "string" ? body.content.trim() : "";
   const numQuestions = typeof body?.numQuestions === "number" ? body.numQuestions : NaN;
   const difficulty = body?.difficulty;
+  const userId = typeof body?.userId === "string" ? body.userId : undefined;
+
+  // Enforce quiz limit for free users
+  if (userId) {
+    const userDoc = await getUserProfile(userId);
+    if (!userDoc) {
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    }
+    const isPro = userDoc.subscriptionTier === "pro" || userDoc.subscriptionTier === "teacher" || userDoc.subscriptionTier === "institution";
+    if (!isPro) {
+      if ((userDoc.freeQuizCountThisMonth ?? 0) >= 3) {
+        return NextResponse.json(
+          { error: "Free plan limit reached. Please upgrade to generate more quizzes." },
+          { status: 403 },
+        );
+      }
+      // Increment counter
+      await setDoc(doc(db, "users", userId), {
+        freeQuizCountThisMonth: (userDoc.freeQuizCountThisMonth ?? 0) + 1,
+        freeQuizLastUpdatedAt: Date.now(),
+      }, { merge: true });
+    }
+  }
 
   if (!content || !Number.isFinite(numQuestions) || !isValidDifficulty(difficulty)) {
     return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
