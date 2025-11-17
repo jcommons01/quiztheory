@@ -81,6 +81,7 @@ export default function AppShell({ children }: AppShellProps) {
               <div className="text-xs text-zinc-400 max-w-[160px] truncate sm:max-w-xs">
                 {user?.email || "Guest"}
               </div>
+              <Button size="sm" variant={pathname === "/account" ? "secondary" : "outline"} onClick={() => nav("/account")}>Account</Button>
               <Button size="sm" variant="outline" onClick={handleLogout}>
                 Log out
               </Button>
