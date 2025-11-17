@@ -73,6 +73,7 @@ import {
   setQuizPublicId,
   generatePublicId
 } from "@/lib/firestore"
+import { getFirestore, doc, onSnapshot } from "firebase/firestore"
 import AppShell from "@/components/layout/app-shell"
 
 export default function DashboardPage() {
@@ -148,48 +149,54 @@ export default function DashboardPage() {
   }, [router])
 
   React.useEffect(() => {
-    const init = async () => {
-      if (!auth.currentUser) return
-      try {
-        const uid = auth.currentUser.uid
-        const profile = await getUserProfile(uid)
-        setUserProfile(profile)
-        const quizData = await getUserQuizzes(uid)
-        setQuizzes(quizData as Array<{ id: string; title?: string; createdAt?: number; questions?: unknown[]; publicId?: string }>)
-        // Seed demo quizzes if user has none (first-time experience)
-        if (!quizData.length) {
-          setDemoQuizzes([
-            {
-              id: 'demo-gcse-bio',
-              title: 'Demo: GCSE Biology - Cells',
-              demo: true,
-              questionsCount: 5
-            },
-            {
-              id: 'demo-history-ww2',
-              title: 'Demo: Modern History - WWII Overview',
-              demo: true,
-              questionsCount: 6
+    const unsub = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.push("/")
+        return
+      }
+      // Listen to Firestore user doc in real-time
+      const db = getFirestore();
+      const userRef = doc(db, "users", user.uid);
+      const unsubProfile = onSnapshot(userRef, async (snap) => {
+        const profile = snap.exists() ? (snap.data() as UserProfile) : null;
+        setUserProfile(profile);
+        if (profile) {
+          const quizData = await getUserQuizzes(user.uid);
+          setQuizzes(quizData as Array<{ id: string; title?: string; createdAt?: number; questions?: unknown[]; publicId?: string }>);
+          // Seed demo quizzes if user has none (first-time experience)
+          if (!quizData.length) {
+            setDemoQuizzes([
+              {
+                id: 'demo-gcse-bio',
+                title: 'Demo: GCSE Biology - Cells',
+                demo: true,
+                questionsCount: 5
+              },
+              {
+                id: 'demo-history-ww2',
+                title: 'Demo: Modern History - WWII Overview',
+                demo: true,
+                questionsCount: 6
+              }
+            ])
+          }
+          if (profile.role === 'teacher' || profile.role === 'institution') {
+            setLoadingClasses(true)
+            try {
+              const classData = await getTeacherClasses(user.uid)
+              setClasses(classData)
+            } finally {
+              setLoadingClasses(false)
             }
-          ])
-        }
-        if (profile && (profile.role === 'teacher' || profile.role === 'institution')) {
-          setLoadingClasses(true)
-          try {
-            const classData = await getTeacherClasses(uid)
-            setClasses(classData)
-          } finally {
-            setLoadingClasses(false)
           }
         }
-      } catch (e) {
-        console.error('Dashboard init failed', e)
-      } finally {
-        setLoadingProfile(false)
-      }
-    }
-    void init()
-  }, [router])
+        setLoadingProfile(false);
+      });
+      // Clean up Firestore listener on unmount
+      return unsubProfile;
+    });
+    return () => unsub();
+  }, [router]);
 
   // Assignment counts
   React.useEffect(() => {

@@ -5,6 +5,7 @@ import { sendPasswordResetEmail } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, UserProfile } from "@/lib/firestore";
+import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { createUserProfile } from "@/lib/firestore";
 import AppShell from "@/components/layout/app-shell";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -60,25 +61,32 @@ export default function AccountPage() {
   };
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user: any) => {
+    const unsubscribe = auth.onAuthStateChanged((user: any) => {
       if (!user) {
         router.replace("/auth");
         return;
       }
-      let prof = await getUserProfile(user.uid);
-      if (!prof) {
-        // Create a default profile for legacy users
-        prof = {
-          uid: user.uid,
-          email: user.email || "",
-          role: "user",
-          subscriptionTier: "free",
-          createdAt: Date.now(),
-        };
-        await createUserProfile(prof);
-      }
-      setProfile(prof);
-      setLoading(false);
+      // Listen to Firestore user doc in real-time
+      const db = getFirestore();
+      const userRef = doc(db, "users", user.uid);
+      const unsubProfile = onSnapshot(userRef, async (snap) => {
+        let prof = snap.exists() ? (snap.data() as UserProfile) : null;
+        if (!prof) {
+          // Create a default profile for legacy users
+          prof = {
+            uid: user.uid,
+            email: user.email || "",
+            role: "user",
+            subscriptionTier: "free",
+            createdAt: Date.now(),
+          };
+          await createUserProfile(prof);
+        }
+        setProfile(prof);
+        setLoading(false);
+      });
+      // Clean up Firestore listener on unmount
+      return unsubProfile;
     });
     return () => unsubscribe();
   }, [router]);
