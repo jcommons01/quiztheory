@@ -63,6 +63,7 @@ export interface UserProfile {
   createdAt: number;
   freeQuizCountThisMonth?: number;
   freeQuizLastUpdatedAt?: number;
+  stripeCustomerId?: string;
 }
 
 export async function createUserProfile(profile: UserProfile) {
