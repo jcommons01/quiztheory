@@ -5,6 +5,7 @@ import { sendPasswordResetEmail } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, UserProfile } from "@/lib/firestore";
+import { createUserProfile } from "@/lib/firestore";
 import AppShell from "@/components/layout/app-shell";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,18 @@ export default function AccountPage() {
         router.replace("/auth");
         return;
       }
-      const prof = await getUserProfile(user.uid);
+      let prof = await getUserProfile(user.uid);
+      if (!prof) {
+        // Create a default profile for legacy users
+        prof = {
+          uid: user.uid,
+          email: user.email || "",
+          role: "user",
+          subscriptionTier: "free",
+          createdAt: Date.now(),
+        };
+        await createUserProfile(prof);
+      }
       setProfile(prof);
       setLoading(false);
     });
