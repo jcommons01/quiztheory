@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { getUserProfile } from "@/lib/firestore";
+import { adminDb } from "@/lib/firebase-admin";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
-    const user = await getUserProfile(userId);
+    const userSnap = await adminDb.collection("users").doc(userId).get();
+    const user = userSnap.exists ? userSnap.data() : null;
     if (!user || !user.stripeCustomerId) {
       return NextResponse.json({ error: "No Stripe customer" }, { status: 400 });
     }

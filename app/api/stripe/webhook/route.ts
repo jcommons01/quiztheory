@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { db } from "@/lib/firestore";
-import { collection, doc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import crypto from "node:crypto";
 
 export const runtime = "nodejs";
@@ -57,13 +57,15 @@ function verifyStripeSignature(rawBody: string, sigHeader: string | null, secret
 }
 
 async function findUidByCustomerId(customerId: string): Promise<string | null> {
-  const snap = await getDocs(query(collection(db, "users"), where("stripeCustomerId", "==", customerId)));
+  const usersRef = adminDb.collection("users");
+  const snap = await usersRef.where("stripeCustomerId", "==", customerId).get();
   if (snap.empty) return null;
   return snap.docs[0].id;
 }
 
 async function updateUser(uid: string, data: Record<string, any>) {
-  await setDoc(doc(db, "users", uid), data, { merge: true });
+  const userRef = adminDb.collection("users").doc(uid);
+  await userRef.set(data, { merge: true });
 }
 
 // Helper to fetch a Stripe subscription via REST to extract priceId
