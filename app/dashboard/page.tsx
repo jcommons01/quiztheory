@@ -369,16 +369,16 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-  <div className="w-full max-w-screen-sm mx-auto px-4 py-6 space-y-8">
-        {/* Hero header to match homepage/auth */}
-  <section className="relative flex flex-col justify-center items-center gap-4 text-center px-4 py-8 w-full">
+      <div className="w-full max-w-3xl mx-auto px-4 md:px-8 py-6 space-y-8">
+        {/* Hero header */}
+        <section className="relative flex flex-col justify-center items-center gap-4 text-center pt-8 pb-6 w-full">
           <div aria-hidden className="absolute inset-0 pointer-events-none">
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
           </div>
-          <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl leading-tight pb-1 bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
+          <h1 className="relative z-10 font-bold tracking-tight text-2xl sm:text-3xl md:text-5xl leading-tight pb-1 bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
             Create and manage your quizzes
           </h1>
-          <p className="relative z-10 max-w-2xl text-zinc-300 leading-relaxed text-sm md:text-base">
+          <p className="relative z-10 max-w-xl text-zinc-300 leading-relaxed text-base sm:text-lg md:text-xl mx-auto">
             Paste notes, upload PDFs or images, then generate and share AI-powered quizzes.
           </p>
           {userProfile && (
@@ -396,17 +396,17 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Grid */}
-        <div className="grid gap-6 lg:grid-cols-[1.3fr,1fr]">
+        {/* Main content grid */}
+        <div className="flex flex-col lg:flex-row gap-8 w-full">
           {/* Left: Create quiz */}
           <Card>
             <CardHeader>
-              <CardTitle>Create a new quiz</CardTitle>
-              <CardDescription>Turn any text, photo, or PDF into questions.</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Create a new quiz</CardTitle>
+              <CardDescription className="text-sm sm:text-base">Turn any text, photo, or PDF into questions.</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={mode} onValueChange={v => { if (!isProOrAbove && v !== 'text') return; setMode(v as any) }} className="w-full">
-                <TabsList>
+                <TabsList className="text-xs sm:text-sm">
                   <TabsTrigger value="text">Text</TabsTrigger>
                   <TabsTrigger value="file" className={!isProOrAbove ? 'pointer-events-none opacity-40' : ''} aria-disabled={!isProOrAbove}>File</TabsTrigger>
                   <TabsTrigger value="image" className={!isProOrAbove ? 'pointer-events-none opacity-40' : ''} aria-disabled={!isProOrAbove}>Image</TabsTrigger>
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                 )}
                 {/* Text */}
                 <TabsContent value="text" className="space-y-4 pt-2">
-                  <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Paste notes or content here..." className="min-h-40 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none shadow-xs placeholder:text-zinc-500 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]" />
+                  <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Paste notes or content here..." className="min-h-40 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base sm:text-sm outline-none shadow-xs placeholder:text-zinc-500 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]" />
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
                       <Label htmlFor="num-questions">Number of questions</Label>
@@ -572,35 +572,32 @@ export default function DashboardPage() {
                   )}
                 </>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {quizzes.map(q => {
                     const title = q.title || 'Untitled quiz'
                     const count = Array.isArray(q.questions) ? q.questions.length : 0
                     const date = q.createdAt ? new Date(q.createdAt).toLocaleDateString() : '—'
                     return (
-                      <Card key={q.id}>
-                        <CardContent className="py-4">
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="font-medium truncate flex items-center gap-2">
-                                <span className="truncate">{title}</span>
-                                {q.publicId && (
-                                  <span className="inline-flex items-center rounded-full bg-emerald-900/40 border border-emerald-600/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300">Shared</span>
-                                )}
-                              </div>
-                              <div className="text-sm text-zinc-400">{count} {count === 1 ? 'question' : 'questions'} • Created {date}</div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <Button onClick={() => router.push(`/quiz/${q.id}`)}>Open</Button>
-                              <Button variant="secondary" onClick={() => router.push(`/quiz/${q.id}/edit`)}>Edit</Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={sharingQuizId === q.id}
-                                aria-busy={sharingQuizId === q.id}
-                                onClick={() => handleShare(q)}
-                              >{sharingQuizId === q.id ? 'Sharing…' : 'Share'}</Button>
-                            </div>
+                      <Card key={q.id} className="w-full">
+                        <CardContent className="py-4 flex flex-col gap-2">
+                          <div className="font-medium truncate flex items-center gap-2">
+                            <span className="truncate">{title}</span>
+                            {q.publicId && (
+                              <span className="inline-flex items-center rounded-full bg-emerald-900/40 border border-emerald-600/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-emerald-300">Shared</span>
+                            )}
+                          </div>
+                          <div className="text-sm text-zinc-400">{count} {count === 1 ? 'question' : 'questions'} • Created {date}</div>
+                          <div className="flex flex-col xs:flex-row flex-wrap gap-2 mt-2 w-full">
+                            <Button className="w-full xs:w-auto" onClick={() => router.push(`/quiz/${q.id}`)}>Open</Button>
+                            <Button className="w-full xs:w-auto" variant="secondary" onClick={() => router.push(`/quiz/${q.id}/edit`)}>Edit</Button>
+                            <Button
+                              className="w-full xs:w-auto"
+                              variant="outline"
+                              size="sm"
+                              disabled={sharingQuizId === q.id}
+                              aria-busy={sharingQuizId === q.id}
+                              onClick={() => handleShare(q)}
+                            >{sharingQuizId === q.id ? 'Sharing…' : 'Share'}</Button>
                           </div>
                           {shareLinks[q.id] && (
                             <div className="mt-3 flex items-center gap-2">

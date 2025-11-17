@@ -31,40 +31,66 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col">
-      {/* Top nav */}
-  <header className="border-b border-zinc-800/60 bg-zinc-950/90 backdrop-blur supports-backdrop-filter:bg-zinc-950/70">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col overflow-x-hidden">
+      {/*
+        =============================
+        TOP BAR / HEADER SECTION START
+        This section renders the top navigation bar with:
+        - App logo (left)
+        - Navigation tabs (Dashboard, My results)
+        - User email and Log out button (right)
+        =============================
+      */}
+      <header className="w-full border-b border-zinc-800/60 bg-zinc-950/90 backdrop-blur supports-backdrop-filter:bg-zinc-950/70">
+        <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Left logo */}
           <button
             onClick={() => nav("/dashboard")}
             className="group flex items-center gap-3 select-none"
           >
-            <div className="h-7 w-7 rounded-md bg-zinc-800 border border-zinc-700 grid place-items-center text-[10px] font-semibold group-hover:border-zinc-600 transition">QT</div>
-            <div className="text-sm sm:text-base font-medium tracking-tight group-hover:text-zinc-200 transition">QuizTheory</div>
-          </button>
-          {/* Middle nav */}
-          <div className="flex items-center gap-2 ml-auto">
-            <Button
-              size="sm"
-              variant={pathname === "/dashboard" ? "secondary" : "outline"}
-              onClick={() => nav("/dashboard")}
-            >Dashboard</Button>
-            <Button
-              size="sm"
-              variant={pathname === "/my-results" ? "secondary" : "outline"}
-              onClick={() => nav("/my-results")}
-            >My results</Button>
-          </div>
-          {/* Right account */}
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-zinc-400 min-w-[140px] truncate">
-              {user?.email || "Guest"}
+            <div className="h-7 w-7 rounded-md bg-zinc-800 border border-zinc-700 grid place-items-center text-[10px] font-semibold group-hover:border-zinc-600 transition">
+              QT
             </div>
-            <Button size="sm" variant="outline" onClick={handleLogout}>Log out</Button>
+            <div className="text-sm sm:text-base font-medium tracking-tight group-hover:text-zinc-200 transition">
+              QuizTheory
+            </div>
+          </button>
+
+          {/* Right side: nav + account */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 sm:justify-end w-full">
+            {/* Middle nav */}
+            <div className="inline-flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant={pathname === "/dashboard" ? "secondary" : "outline"}
+                onClick={() => nav("/dashboard")}
+              >
+                Dashboard
+              </Button>
+              <Button
+                size="sm"
+                variant={pathname === "/my-results" ? "secondary" : "outline"}
+                onClick={() => nav("/my-results")}
+              >
+                My results
+              </Button>
+            </div>
+
+            {/* Right account */}
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-zinc-400 max-w-[160px] truncate sm:max-w-xs">
+                {user?.email || "Guest"}
+              </div>
+              <Button size="sm" variant="outline" onClick={handleLogout}>
+                Log out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
+      {/* =============================
+        TOP BAR / HEADER SECTION END
+      ============================= */}
       {/* Main content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
         {children}

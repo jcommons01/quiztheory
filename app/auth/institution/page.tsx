@@ -3,10 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -52,7 +49,9 @@ export default function InstitutionSignupPage() {
 
       // Set simple cookies used by middleware for protected routes (non-HTTPOnly in client)
       try {
-        document.cookie = `session=${encodeURIComponent(user.uid)}; Path=/; Max-Age=${60 * 60 * 24 * 7}`; // 7 days
+        document.cookie = `session=${encodeURIComponent(
+          user.uid,
+        )}; Path=/; Max-Age=${60 * 60 * 24 * 7}`; // 7 days
         document.cookie = `role=institution; Path=/; Max-Age=${60 * 60 * 24 * 7}`;
       } catch {}
 
@@ -66,28 +65,31 @@ export default function InstitutionSignupPage() {
   };
 
   return (
-    <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen px-4 w-full max-w-screen-sm mx-auto">
-      {/* Hero (matches /auth style) */}
-      <section className="relative flex flex-col justify-center items-center gap-8 text-center px-4 pb-20 pt-32 min-h-screen w-full">
+    <main className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col items-stretch overflow-x-hidden">
+      {/* Hero (matches /auth style, centered for mobile) */}
+      <section className="relative flex flex-col justify-center items-center gap-8 text-center min-h-screen w-full max-w-xl mx-auto px-4 pb-20 pt-32 sm:pt-40">
         {/* Decorative gradient */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
         </div>
 
-        <h1 className="relative z-10 font-bold tracking-tight text-4xl md:text-6xl max-w-5xl leading-[1.05] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
+        <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl max-w-xl leading-[1.05] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
           Create Institution Account
         </h1>
-        <p className="relative z-10 max-w-2xl text-lg md:text-2xl text-zinc-300 leading-relaxed">
+
+        <p className="relative z-10 max-w-xl text-base md:text-xl text-zinc-300 leading-relaxed">
           Sign up your school or organization.
         </p>
 
         {/* Form card */}
-        <div className="relative z-10 w-full max-w-lg">
+        <div className="relative z-10 w-full max-w-md">
           <Card className="bg-zinc-900/70 border border-zinc-800 backdrop-blur-sm">
             <CardContent className="pt-6 pb-6">
               <form onSubmit={onSubmit} className="space-y-5 text-left">
                 <div className="space-y-2">
-                  <Label htmlFor="institutionName" className="text-zinc-200">Institution name</Label>
+                  <Label htmlFor="institutionName" className="text-zinc-200">
+                    Institution name
+                  </Label>
                   <Input
                     id="institutionName"
                     value={institutionName}
@@ -97,7 +99,9 @@ export default function InstitutionSignupPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="adminName" className="text-zinc-200">Admin name</Label>
+                  <Label htmlFor="adminName" className="text-zinc-200">
+                    Admin name
+                  </Label>
                   <Input
                     id="adminName"
                     value={adminName}
@@ -107,7 +111,9 @@ export default function InstitutionSignupPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-zinc-200">Email</Label>
+                  <Label htmlFor="email" className="text-zinc-200">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -118,7 +124,9 @@ export default function InstitutionSignupPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-zinc-200">Password</Label>
+                  <Label htmlFor="password" className="text-zinc-200">
+                    Password
+                  </Label>
                   <Input
                     id="password"
                     type="password"
@@ -137,7 +145,7 @@ export default function InstitutionSignupPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-violet-600 hover:bg-violet-500"
+                  className="w-full bg-white text-zinc-900 font-semibold hover:bg-zinc-100"
                   disabled={loading}
                 >
                   {loading ? "Creating account…" : "Create institution account"}
@@ -150,4 +158,3 @@ export default function InstitutionSignupPage() {
     </main>
   );
 }
-

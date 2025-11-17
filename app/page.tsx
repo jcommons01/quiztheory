@@ -10,28 +10,28 @@ export const metadata = {
 
 export default function Home() {
   return (
-    <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen px-4">
+    <main className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col items-stretch overflow-x-hidden">
       {/* Hero */}
-      <section className="relative flex flex-col justify-center items-center gap-8 text-center px-4 pb-24 pt-32 min-h-screen w-full max-w-screen-sm mx-auto">
+      <section className="relative flex flex-col justify-center items-center text-center min-h-screen w-full max-w-xl mx-auto px-4 py-12 sm:py-20 md:py-32">
         {/* Decorative gradient */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
         </div>
-        <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl max-w-2xl leading-[1.1] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
+        <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl max-w-xl leading-[1.1] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
           Turn any text, PDF, or image into a quiz.
         </h1>
-        <p className="relative z-10 max-w-xl text-base md:text-xl text-zinc-300 leading-relaxed">
+        <p className="relative z-10 max-w-xl text-base md:text-xl text-zinc-300 leading-relaxed mt-4">
           AI-powered quiz generation for students, teachers, and training organisations.
         </p>
-        <div className="relative z-10 flex flex-wrap items-center justify-center gap-4 mt-2 w-full">
-          <Button asChild size="lg" className="font-semibold w-full sm:w-auto">
+        <div className="relative z-10 flex flex-col md:flex-row w-full gap-y-3 md:gap-y-0 md:gap-x-4 mt-8">
+          <Button asChild size="lg" className="font-semibold w-full min-h-12 py-3 md:w-auto">
             <Link href="/auth">Get Started Free</Link>
           </Button>
           <Button
             asChild
             variant="outline"
             size="lg"
-            className="font-semibold text-white hover:text-white border-white/70 hover:bg-white/10 w-full sm:w-auto"
+            className="font-semibold text-white hover:text-white border-white/70 hover:bg-white/10 w-full min-h-12 py-3 md:w-auto"
           >
             <Link href="/p/demo">Try a Live Demo</Link>
           </Button>

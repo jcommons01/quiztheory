@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { signInWithEmail, signUpWithEmail } from "@/lib/auth";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,11 +51,18 @@ const AuthPageClient: React.FC = () => {
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {
       if (user) {
-        const pending = (typeof window !== 'undefined') ? sessionStorage.getItem("pending-join-code") : null;
+        const pending =
+          typeof window !== "undefined" ? sessionStorage.getItem("pending-join-code") : null;
         if (pending) {
           void (async () => {
-            try { await joinClassByCode(user.uid, pending); } catch (e) { /* ignore */ }
-            try { sessionStorage.removeItem("pending-join-code"); } catch {}
+            try {
+              await joinClassByCode(user.uid, pending);
+            } catch (e) {
+              /* ignore */
+            }
+            try {
+              sessionStorage.removeItem("pending-join-code");
+            } catch {}
             router.push("/dashboard#classes");
           })();
         } else {
@@ -72,7 +76,9 @@ const AuthPageClient: React.FC = () => {
   useEffect(() => {
     const code = (search?.get("join") || "").toUpperCase();
     if (code) {
-      try { sessionStorage.setItem("pending-join-code", code); } catch {}
+      try {
+        sessionStorage.setItem("pending-join-code", code);
+      } catch {}
     }
   }, [search]);
 
@@ -82,10 +88,15 @@ const AuthPageClient: React.FC = () => {
     setLoginLoading(true);
     try {
       await signInWithEmail(loginEmail.trim(), loginPassword);
-      const pending = (typeof window !== 'undefined') ? sessionStorage.getItem("pending-join-code") : null;
+      const pending =
+        typeof window !== "undefined" ? sessionStorage.getItem("pending-join-code") : null;
       if (pending && auth.currentUser) {
-        try { await joinClassByCode(auth.currentUser.uid, pending); } catch {}
-        try { sessionStorage.removeItem("pending-join-code"); } catch {}
+        try {
+          await joinClassByCode(auth.currentUser.uid, pending);
+        } catch {}
+        try {
+          sessionStorage.removeItem("pending-join-code");
+        } catch {}
         router.push("/dashboard#classes");
       } else {
         router.push("/dashboard");
@@ -109,10 +120,15 @@ const AuthPageClient: React.FC = () => {
     setSignupLoading(true);
     try {
       await signUpWithEmail(signupEmail.trim(), signupPassword);
-      const pending = (typeof window !== 'undefined') ? sessionStorage.getItem("pending-join-code") : null;
+      const pending =
+        typeof window !== "undefined" ? sessionStorage.getItem("pending-join-code") : null;
       if (pending && auth.currentUser) {
-        try { await joinClassByCode(auth.currentUser.uid, pending); } catch {}
-        try { sessionStorage.removeItem("pending-join-code"); } catch {}
+        try {
+          await joinClassByCode(auth.currentUser.uid, pending);
+        } catch {}
+        try {
+          sessionStorage.removeItem("pending-join-code");
+        } catch {}
         router.push("/dashboard#classes");
       } else {
         router.push("/dashboard");
@@ -125,17 +141,19 @@ const AuthPageClient: React.FC = () => {
   };
 
   return (
-    <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen">
-      {/* Hero (matches homepage) */}
-      <section className="relative flex flex-col justify-center items-center gap-8 text-center px-6 md:px-12 pb-24 pt-40 min-h-screen">
+    <main className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col items-stretch overflow-x-hidden">
+      {/* Hero (matches homepage but constrained for mobile) */}
+      <section className="relative flex flex-col justify-center items-center gap-8 text-center min-h-screen w-full max-w-xl mx-auto px-4 pb-24 pt-32 sm:pt-40">
         {/* Decorative gradient (same as /) */}
         <div aria-hidden className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
         </div>
-        <h1 className="relative z-10 font-bold tracking-tight text-4xl md:text-6xl max-w-5xl leading-[1.05] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
+
+        <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl max-w-xl leading-[1.05] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
           Turn any text, PDF, or image into a quiz.
         </h1>
-        <p className="relative z-10 max-w-2xl text-lg md:text-2xl text-zinc-300 leading-relaxed">
+
+        <p className="relative z-10 max-w-xl text-base md:text-xl text-zinc-300 leading-relaxed">
           AI-powered quiz generation for students, teachers, and training organisations.
         </p>
 
@@ -145,14 +163,20 @@ const AuthPageClient: React.FC = () => {
             <CardContent className="pt-6 pb-6">
               <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
                 <TabsList className="w-full">
-                  <TabsTrigger value="login" className="flex-1">Login</TabsTrigger>
-                  <TabsTrigger value="signup" className="flex-1">Sign up</TabsTrigger>
+                  <TabsTrigger value="login" className="flex-1">
+                    Login
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="flex-1">
+                    Sign up
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login" className="mt-4">
                   <form onSubmit={onLogin} className="space-y-4">
                     <div className="space-y-2 text-left">
-                      <Label htmlFor="login-email" className="text-zinc-200">Email</Label>
+                      <Label htmlFor="login-email" className="text-zinc-200">
+                        Email
+                      </Label>
                       <Input
                         id="login-email"
                         type="email"
@@ -163,7 +187,9 @@ const AuthPageClient: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-2 text-left">
-                      <Label htmlFor="login-password" className="text-zinc-200">Password</Label>
+                      <Label htmlFor="login-password" className="text-zinc-200">
+                        Password
+                      </Label>
                       <Input
                         id="login-password"
                         type="password"
@@ -174,7 +200,9 @@ const AuthPageClient: React.FC = () => {
                       />
                     </div>
                     {loginError && (
-                      <p className="text-sm text-red-500" role="alert">{loginError}</p>
+                      <p className="text-sm text-red-500" role="alert">
+                        {loginError}
+                      </p>
                     )}
                     <Button type="submit" className="w-full" disabled={loginLoading}>
                       {loginLoading ? "Signing in…" : "Sign in"}
@@ -185,7 +213,9 @@ const AuthPageClient: React.FC = () => {
                 <TabsContent value="signup" className="mt-4">
                   <form onSubmit={onSignup} className="space-y-4">
                     <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-email" className="text-zinc-200">Email</Label>
+                      <Label htmlFor="signup-email" className="text-zinc-200">
+                        Email
+                      </Label>
                       <Input
                         id="signup-email"
                         type="email"
@@ -196,7 +226,9 @@ const AuthPageClient: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-password" className="text-zinc-200">Password</Label>
+                      <Label htmlFor="signup-password" className="text-zinc-200">
+                        Password
+                      </Label>
                       <Input
                         id="signup-password"
                         type="password"
@@ -207,7 +239,9 @@ const AuthPageClient: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-confirm" className="text-zinc-200">Confirm password</Label>
+                      <Label htmlFor="signup-confirm" className="text-zinc-200">
+                        Confirm password
+                      </Label>
                       <Input
                         id="signup-confirm"
                         type="password"
@@ -218,7 +252,9 @@ const AuthPageClient: React.FC = () => {
                       />
                     </div>
                     {signupError && (
-                      <p className="text-sm text-red-500" role="alert">{signupError}</p>
+                      <p className="text-sm text-red-500" role="alert">
+                        {signupError}
+                      </p>
                     )}
                     <Button type="submit" className="w-full" disabled={signupLoading}>
                       {signupLoading ? "Creating account…" : "Create account"}
@@ -226,11 +262,14 @@ const AuthPageClient: React.FC = () => {
                   </form>
                 </TabsContent>
               </Tabs>
+
               <div className="mt-5 flex flex-col items-center gap-1">
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className="w-full">
                   <Link href="/auth/institution">Sign up as an institution</Link>
                 </Button>
-                <span className="text-[11px] text-zinc-500">For schools, colleges, and organisations</span>
+                <span className="text-[11px] text-zinc-500">
+                  For schools, colleges, and organisations
+                </span>
               </div>
             </CardContent>
           </Card>
