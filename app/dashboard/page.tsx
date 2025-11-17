@@ -123,10 +123,16 @@ export default function DashboardPage() {
   const [activeDemoQuiz, setActiveDemoQuiz] = React.useState<{ id: string; title: string; demo: true; questionsCount: number } | null>(null)
 
   // Subscription plan derived value
-  const currentTier = userProfile?.subscriptionTier ?? "free"
-  const isProOrAbove = currentTier === 'pro' || currentTier === 'teacher' || currentTier === 'institution'
-  const FREE_QUIZ_LIMIT = 3
-  const limitReached = !isProOrAbove && quizzes.length >= FREE_QUIZ_LIMIT
+  const planMap = {
+    free: "Free",
+    pro: "Pro",
+    teacher: "Teacher",
+    institution: "Institution",
+  } as const;
+  const currentTier = userProfile?.subscriptionTier ?? "free";
+  const isProOrAbove = currentTier === "pro" || currentTier === "teacher" || currentTier === "institution";
+  const FREE_QUIZ_LIMIT = 3;
+  const limitReached = !isProOrAbove && quizzes.length >= FREE_QUIZ_LIMIT;
 
   // Initial load
   // Auth guard
@@ -429,10 +435,7 @@ export default function DashboardPage() {
           </p>
           {userProfile && (
             <div className="relative z-10 inline-flex items-center gap-2 mt-2 text-xs text-zinc-400">
-              <span className="rounded-md border border-zinc-800 bg-zinc-900/70 px-2 py-1">Plan: {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}</span>
-              {!isProOrAbove && (
-                <Button size="sm" onClick={() => router.push('/pricing')}>Upgrade</Button>
-              )}
+              <span className="rounded-md border border-zinc-800 bg-zinc-900/70 px-2 py-1">Plan: {planMap[currentTier as keyof typeof planMap]}</span>
             </div>
           )}
           {!isProOrAbove && (

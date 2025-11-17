@@ -106,38 +106,33 @@ export async function POST(req: Request) {
     }
 
     if (type === "checkout.session.completed") {
+      // Read userId from metadata (preferred), fallback to client_reference_id
       const customerId: string | undefined = dataObject?.customer ?? undefined;
       const subscriptionId: string | undefined = dataObject?.subscription ?? undefined;
-      const clientRef: string | undefined = dataObject?.client_reference_id ?? dataObject?.client_reference_id ?? undefined;
+      const metadata = dataObject?.metadata || {};
+      const userId: string | undefined = metadata.userId || dataObject?.client_reference_id || undefined;
 
-      if (!customerId) {
+      if (!customerId || !userId) {
         return NextResponse.json({ ok: true });
       }
 
-      // Find user by stripeCustomerId or fallback to client_reference_id if present
-      let uid = await findUidByCustomerId(customerId);
-      if (!uid && clientRef && typeof clientRef === "string") {
-        uid = clientRef;
-      }
-      if (!uid) {
-        // As a last fallback, try to set stripeCustomerId via clientRef metadata, if provided
-        // If still unknown, acknowledge to avoid retries; a later subscription.updated will reconcile
-        return NextResponse.json({ ok: true });
-      }
+      // Log for debugging
+      console.log("Webhook checkout.session.completed", {
+        userId,
+        subscriptionId,
+        customerId,
+      });
 
-      const updates: Record<string, any> = { stripeCustomerId: customerId };
+      // Prepare updates for Firestore user doc
+      const updates: Record<string, any> = {
+        isPro: true,
+        subscriptionTier: "pro",
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscriptionId,
+        subscribedAt: Date.now(),
+      };
 
-      // Try to map priceId to tier (optional, may be deferred to subscription.updated)
-      const secretKey = process.env.STRIPE_SECRET_KEY;
-      if (secretKey && subscriptionId) {
-        const priceId = await fetchStripeSubscriptionPriceId(subscriptionId, secretKey);
-        const tier = mapPriceToTier(priceId);
-        if (tier) {
-          updates.subscriptionTier = tier;
-        }
-      }
-
-      await updateUser(uid, updates);
+      await updateUser(userId, updates);
       return NextResponse.json({ ok: true });
     }
 

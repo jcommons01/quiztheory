@@ -106,6 +106,9 @@ export default function AccountPage() {
     institution: "Institution",
   } as const;
 
+  const currentTier = profile?.subscriptionTier ?? "free";
+  const isProOrAbove = currentTier === "pro" || currentTier === "teacher" || currentTier === "institution";
+
   return (
     <AppShell>
       <div className="w-full max-w-md mx-auto px-4 py-10 flex flex-col items-center justify-center min-h-[60vh]">
@@ -121,7 +124,10 @@ export default function AccountPage() {
             </div>
             <div>
               <div className="text-xs text-zinc-500 mb-1">Plan</div>
-              <div className="text-base font-medium text-zinc-100">{planMap[profile.subscriptionTier as keyof typeof planMap] || "Free"}</div>
+              <div className="text-base font-medium text-zinc-100">{planMap[currentTier as keyof typeof planMap] || "Free"}</div>
+              {isProOrAbove && profile.subscribedAt && (
+                <div className="text-xs text-zinc-400 mt-1">Since: {new Date(profile.subscribedAt).toLocaleDateString()}</div>
+              )}
             </div>
             {profile.createdAt && (
               <div>
@@ -129,10 +135,14 @@ export default function AccountPage() {
                 <div className="text-base text-zinc-100">{new Date(profile.createdAt).toLocaleDateString()}</div>
               </div>
             )}
-            {/* Manage subscription section */}
-            {profile.subscriptionTier !== "free" && profile.stripeCustomerId && (
+
+            {/* Subscription section for Pro/Teacher/Institution */}
+            {isProOrAbove && (
               <div className="pt-2 mb-4 border-t border-zinc-800">
-                <div className="text-xs text-zinc-500 mb-2">Manage subscription</div>
+                <div className="text-xs text-zinc-500 mb-2">Subscription</div>
+                <div className="text-sm text-zinc-300 mb-2">
+                  You are on QuizTheory {planMap[currentTier as keyof typeof planMap]} – billed monthly via Stripe.
+                </div>
                 <Button
                   size="sm"
                   className="w-full sm:w-auto"
@@ -144,8 +154,12 @@ export default function AccountPage() {
                 {portalError && (
                   <div className="text-xs text-red-400 mt-2">{portalError}</div>
                 )}
+                <div className="text-xs text-zinc-400 mt-2">
+                  You can cancel, update payment method, or change your subscription in the Stripe customer portal.
+                </div>
               </div>
             )}
+
             {/* Change password section */}
             <div className="pt-2 mt-4 border-t border-zinc-800">
               <div className="text-xs text-zinc-500 mb-2">Change password</div>

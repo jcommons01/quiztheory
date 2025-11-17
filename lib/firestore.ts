@@ -58,12 +58,15 @@ export interface UserProfile {
   uid: string;
   email: string;
   role: UserRole;
-  subscriptionTier: SubscriptionTier;
+  subscriptionTier?: SubscriptionTier;
+  isPro?: boolean;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  subscribedAt?: number | null;
   institutionId?: string | null;
   createdAt: number;
   freeQuizCountThisMonth?: number;
   freeQuizLastUpdatedAt?: number;
-  stripeCustomerId?: string;
 }
 
 export async function createUserProfile(profile: UserProfile) {
@@ -84,7 +87,13 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  return snap.data() as UserProfile;
+  const data = snap.data() as UserProfile | undefined;
+  if (!data) return null;
+  // Default subscriptionTier to 'free' if missing
+  if (!data.subscriptionTier) {
+    data.subscriptionTier = "free";
+  }
+  return data;
 }
 
 export async function getUserProfileByEmail(email: string): Promise<UserProfile | null> {
