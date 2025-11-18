@@ -1,120 +1,203 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import type { ReactNode } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import { auth } from "@/lib/firebase"
-import { Button } from "@/components/ui/button"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-interface AppShellProps {
-  children: ReactNode
-}
+import { auth } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function AppShell({ children }: AppShellProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const user = auth.currentUser
+type AppShellProps = {
+  children: React.ReactNode;
+  /**
+   * Optional extra action button(s) that certain pages can inject
+   * (e.g. the "Join a class" dialog trigger on the dashboard).
+   */
+  extraActions?: React.ReactNode;
+};
 
-  function nav(to: string) {
-    if (pathname === to) return
-    router.push(to)
-  }
+export default function AppShell({ children, extraActions }: AppShellProps) {
+  const pathname = usePathname();
+  const [email, setEmail] = React.useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  async function handleLogout() {
+  React.useEffect(() => {
+    const unsub = auth.onAuthStateChanged((user) => {
+      setEmail(user?.email ?? null);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleLogout = async () => {
     try {
-      await auth.signOut()
-    } catch (e) {
-      console.error("Sign out failed", e)
-    } finally {
-      router.push("/")
+      await auth.signOut();
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Sign out failed", err);
     }
-  }
+  };
+
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/my-results", label: "My results" },
+    
+  ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col overflow-x-hidden">
-      {/*
-        =============================
-        TOP BAR / HEADER SECTION START
-        This section renders the top navigation bar with:
-        - App logo (left)
-        - Navigation tabs (Dashboard, My results)
-        - User email and Log out button (right)
-        =============================
-      */}
-      <header className="w-full border-b border-zinc-800/60 bg-zinc-950/90 backdrop-blur supports-backdrop-filter:bg-zinc-950/70">
-        <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left logo */}
-          <button
-            onClick={() => nav("/dashboard")}
-            className="group flex items-center gap-3 select-none"
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
+      {/* TOP NAVBAR – solid, same colour as background, thin white line under */}
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-background">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+          {/* Brand */}
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 text-sm font-semibold tracking-tight"
           >
-            <div className="h-7 w-7 rounded-md bg-zinc-800 border border-zinc-700 grid place-items-center text-[10px] font-semibold group-hover:border-zinc-600 transition">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold">
               QT
-            </div>
-            <div className="text-sm sm:text-base font-medium tracking-tight group-hover:text-zinc-200 transition">
-              QuizTheory
-            </div>
-          </button>
+            </span>
+            <span className="hidden sm:inline">QuizTheory</span>
+          </Link>
 
-          {/* Right side: nav + account */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 sm:justify-end w-full">
-            {/* Middle nav */}
-            <div className="inline-flex flex-wrap items-center gap-2">
+          {/* DESKTOP / TABLET NAV */}
+          <nav className="hidden flex-1 items-center justify-center gap-2 md:flex">
+            {navItems.map((item) => {
+              const isActive =
+                item.href === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname?.startsWith(item.href);
+
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    size="sm"
+                    variant={isActive ? "default" : "outline"}
+                    className="rounded-full px-4 text-xs sm:text-sm"
+                  >
+                    {item.label}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* DESKTOP / TABLET RIGHT SIDE (email, extra actions, account, logout) */}
+          <div className="hidden items-center gap-2 text-xs sm:text-sm md:flex">
+            {email && (
+              <span className="hidden text-zinc-400 lg:inline">
+                {email}
+              </span>
+            )}
+
+            {extraActions}
+
+            <Link href="/account">
               <Button
                 size="sm"
-                variant={pathname === "/dashboard" ? "secondary" : "outline"}
-                onClick={() => nav("/dashboard")}
+                variant="outline"
+                className="rounded-full px-4 text-xs sm:text-sm"
               >
-                Dashboard
+                Account
               </Button>
-              <Button
-                size="sm"
-                variant={pathname === "/my-results" ? "secondary" : "outline"}
-                onClick={() => nav("/my-results")}
-              >
-                My results
-              </Button>
-            </div>
+            </Link>
 
-            {/* Right account */}
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-zinc-400 max-w-[160px] truncate sm:max-w-xs">
-                {user?.email || "Guest"}
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full px-4 text-xs sm:text-sm"
+              type="button"
+              onClick={handleLogout}
+            >
+              Log out
+            </Button>
+          </div>
+
+          {/* MOBILE MENU (shows on < md) */}
+          <div className="relative flex items-center gap-2 md:hidden">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full px-3 text-xs"
+              type="button"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+            >
+              <Menu className="h-4 w-4" />
+              <span className="ml-2">Menu</span>
+            </Button>
+
+            {mobileMenuOpen && (
+              <div className="absolute right-0 top-10 z-50 w-44 rounded-md border border-white/10 bg-background/95 shadow-lg backdrop-blur">
+                <div className="py-1 text-sm">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.href}
+                      type="button"
+                      className="flex w-full items-center px-3 py-2 text-left text-zinc-200 hover:bg-white/5"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        window.location.href = item.href;
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="flex w-full items-center px-3 py-2 text-left text-zinc-200 hover:bg-white/5"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.location.href = "/account";
+                    }}
+                  >
+                    Account
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center px-3 py-2 text-left text-zinc-200 hover:bg-white/5"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      void handleLogout();
+                    }}
+                  >
+                    Log out
+                  </button>
+                </div>
               </div>
-              <Button size="sm" variant={pathname === "/account" ? "secondary" : "outline"} onClick={() => nav("/account")}>Account</Button>
-              <Button size="sm" variant="outline" onClick={handleLogout}>
-                Log out
-              </Button>
-            </div>
+            )}
           </div>
         </div>
       </header>
-      {/* =============================
-        TOP BAR / HEADER SECTION END
-      ============================= */}
-      {/* Main content */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-        {children}
-      </main>
-      {/* Footer with feedback link */}
-      <footer className="border-t border-zinc-800/60 mt-auto text-[11px] text-zinc-500">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-600">© {new Date().getFullYear()} QuizTheory</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = "mailto:support@quiztheory.com?subject=QuizTheory feedback";
-              }}
-              className="text-zinc-400 hover:text-zinc-200 transition underline underline-offset-2 decoration-dotted"
-              aria-label="Send feedback"
-            >Send feedback</button>
-            <span className="hidden sm:inline text-zinc-600" title="Tell us what to improve.">Tell us what to improve.</span>
-          </div>
-        </div>
-      </footer>
+
+      {/* PAGE CONTENT */}
+      <main className="mx-auto max-w-6xl px-4 pb-10 pt-10">{children}</main>
     </div>
-  )
+  );
+}
+
+/**
+ * Shared page container used across all pages to get the same
+ * vertical spacing as the upgraded dashboard.
+ *
+ * Use this INSIDE <AppShell>:
+ *
+ * <AppShell>
+ *   <PageContainer>
+ *     ...page sections...
+ *   </PageContainer>
+ * </AppShell>
+ */
+export function PageContainer({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-8 lg:space-y-12", className)}>
+      {children}
+    </div>
+  );
 }

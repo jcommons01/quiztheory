@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import AppShell, { PageContainer } from "@/components/layout/app-shell"
 import {
   Card,
   CardHeader,
@@ -59,33 +60,33 @@ export default function CreateQuizPage() {
     setRegenError(null)
     if (isRegenerating) return
     try {
-      const metaRaw = sessionStorage.getItem('last-quiz-gen')
+      const metaRaw = sessionStorage.getItem("last-quiz-gen")
       if (!metaRaw) {
-        setRegenError('Original generation settings not found (TODO: store them earlier).')
+        setRegenError("Original generation settings not found (TODO: store them earlier).")
         return
       }
       const meta = JSON.parse(metaRaw) as Partial<GenerationSettings>
       if (!meta.content || !meta.numQuestions || !meta.difficulty) {
-        setRegenError('Generation settings incomplete.')
+        setRegenError("Generation settings incomplete.")
         return
       }
       setIsRegenerating(true)
-      const res = await fetch('/api/generate-quiz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/generate-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: meta.content,
           numQuestions: meta.numQuestions,
           difficulty: meta.difficulty,
-        })
+        }),
       })
-      if (!res.ok) throw new Error('Regenerate request failed')
-      const data = await res.json() as { questions: PreviewQuestion[] }
+      if (!res.ok) throw new Error("Regenerate request failed")
+      const data = (await res.json()) as { questions: PreviewQuestion[] }
       setQuiz({ questions: data.questions })
-      sessionStorage.setItem('new-quiz', JSON.stringify(data))
+      sessionStorage.setItem("new-quiz", JSON.stringify(data))
     } catch (e: any) {
-      console.error('Regenerate quiz failed', e)
-      setRegenError(e?.message || 'Failed to regenerate quiz')
+      console.error("Regenerate quiz failed", e)
+      setRegenError(e?.message || "Failed to regenerate quiz")
     } finally {
       setIsRegenerating(false)
     }
@@ -148,7 +149,12 @@ export default function CreateQuizPage() {
       return {
         questions: [
           ...base.questions,
-          { question: "", options: ["", "", "", ""], answer: "", explanation: "" },
+          {
+            question: "",
+            options: ["", "", "", ""],
+            answer: "",
+            explanation: "",
+          },
         ],
       }
     })
@@ -168,189 +174,255 @@ export default function CreateQuizPage() {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i]
       if (!q.question?.trim()) return `Question ${i + 1} is empty.`
-      if (!Array.isArray(q.options) || q.options.length < 4) return `Question ${i + 1} must have 4 options.`
-      const hasEmpty = q.options.some(o => !o?.trim())
+      if (!Array.isArray(q.options) || q.options.length < 4)
+        return `Question ${i + 1} must have 4 options.`
+      const hasEmpty = q.options.some((o) => !o?.trim())
       if (hasEmpty) return `All options for question ${i + 1} must be filled.`
-      if (!q.answer?.trim()) return `Select the correct answer for question ${i + 1}.`
-      if (!q.options.includes(q.answer)) return `The correct answer for question ${i + 1} must match one of the options.`
+      if (!q.answer?.trim())
+        return `Select the correct answer for question ${i + 1}.`
+      if (!q.options.includes(q.answer))
+        return `The correct answer for question ${i + 1} must match one of the options.`
     }
     return null
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50 px-4 w-full max-w-screen-sm mx-auto">
-      {/* Hero header to match homepage/auth */}
-      <section className="relative flex flex-col justify-center items-center gap-4 text-center px-4 pt-20 pb-8 w-full">
-        <div aria-hidden className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
-        </div>
-        <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl leading-[1.1] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
-          Quiz Preview
-        </h1>
-        <p className="relative z-10 max-w-2xl text-zinc-300 leading-relaxed text-sm md:text-base">
-          Review the generated questions, tweak the title, then save or regenerate.
-        </p>
-      </section>
+    <AppShell>
+      <PageContainer>
+        {/* Hero header to match app style */}
+        <section className="pt-2 lg:pt-0">
+          <div className="mx-auto max-w-6xl text-center">
+            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl md:text-4xl lg:text-5xl">
+              Quiz Preview
+            </h1>
+            <p className="mt-4 text-sm text-slate-400 md:text-base">
+              Review the generated questions, tweak the title, then save or regenerate.
+            </p>
+          </div>
+        </section>
 
-  <div className="mx-auto pb-10 space-y-6 w-full">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quiz Preview</CardTitle>
-            <CardDescription>Review and edit the questions, then save or regenerate.</CardDescription>
-          </CardHeader>
-          {!quiz ? (
-            <CardContent>
-              <div className="text-zinc-400">
-                No quiz data found. Go back to the dashboard and generate a quiz.
-              </div>
-            </CardContent>
-          ) : (
-            <>
-              <CardContent className="space-y-5">
-                <div className="grid gap-2">
-                  <Label htmlFor="quiz-title">Quiz title</Label>
-                  <Input
-                    id="quiz-title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Untitled quiz"
-                  />
-                </div>
-                <div className="space-y-5">
-                  {quiz.questions.map((q, i) => (
-                    <Card key={i}>
-                      <CardHeader>
-                        <CardTitle className="text-base">Question {i + 1}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor={`q-${i}`}>Question text</Label>
-                          <Textarea
-                            id={`q-${i}`}
-                            value={q.question}
-                            onChange={(e) => updateQuestionText(i, e.target.value)}
-                            placeholder="Enter question…"
-                          />
-                        </div>
+        {/* Main content card */}
+        <div className="mx-auto w-full max-w-screen-md pb-24 pt-10 space-y-6">
+          <Card className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/70 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Quiz Preview</CardTitle>
+              <CardDescription className="text-sm text-slate-400">
+                Review and edit the questions, then save or regenerate.
+              </CardDescription>
+            </CardHeader>
 
-                        <div className="grid gap-3">
-                          <div className="text-sm text-zinc-400">Options (mark the correct one)</div>
-                          {[0,1,2,3].map((optIdx) => (
-                            <div key={optIdx} className="flex items-center gap-3">
-                              <input
-                                type="radio"
-                                name={`answer-${i}`}
-                                className="size-4 accent-green-600"
-                                checked={q.options[optIdx] === q.answer}
-                                onChange={() => markCorrect(i, optIdx)}
-                                aria-label={`Mark option ${optIdx + 1} correct`}
-                              />
-                              <Input
-                                value={q.options[optIdx] ?? ""}
-                                onChange={(e) => updateOption(i, optIdx, e.target.value)}
-                                placeholder={`Option ${optIdx + 1}`}
-                              />
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="grid gap-2">
-                          <Label htmlFor={`exp-${i}`}>Explanation</Label>
-                          <Textarea
-                            id={`exp-${i}`}
-                            value={q.explanation}
-                            onChange={(e) => updateExplanation(i, e.target.value)}
-                            placeholder="Brief explanation (1–3 sentences)…"
-                            className="text-sm"
-                          />
-                          <p className="text-xs text-zinc-400">Shown to users after answering.</p>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex items-center">
-                        <Button variant="secondary" onClick={() => deleteQuestion(i)} className="ms-auto">Delete question</Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-
-                  <div>
-                    <Button variant="secondary" onClick={addQuestion}>+ Add question</Button>
-                  </div>
+            {!quiz ? (
+              <CardContent>
+                <div className="text-sm text-zinc-400">
+                  No quiz data found. Go back to the dashboard and generate a quiz.
                 </div>
               </CardContent>
-              <CardFooter className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={async () => {
-                    if (!quiz?.questions?.length) {
-                      setSaveError("Could not save this quiz. Please try again.")
+            ) : (
+              <>
+                <CardContent className="space-y-5">
+                  <div className="grid gap-2">
+                    <Label htmlFor="quiz-title">Quiz title</Label>
+                    <Input
+                      id="quiz-title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Untitled quiz"
+                    />
+                  </div>
+
+                  <div className="space-y-5">
+                    {quiz.questions.map((q, i) => (
+                      <Card
+                        key={i}
+                        className="border border-zinc-800 bg-zinc-900/60"
+                      >
+                        <CardHeader>
+                          <CardTitle className="text-base">
+                            Question {i + 1}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor={`q-${i}`}>Question text</Label>
+                            <Textarea
+                              id={`q-${i}`}
+                              value={q.question}
+                              onChange={(e) =>
+                                updateQuestionText(i, e.target.value)
+                              }
+                              placeholder="Enter question…"
+                            />
+                          </div>
+
+                          <div className="grid gap-3">
+                            <div className="text-sm text-zinc-400">
+                              Options (mark the correct one)
+                            </div>
+                            {[0, 1, 2, 3].map((optIdx) => (
+                              <div
+                                key={optIdx}
+                                className="flex items-center gap-3"
+                              >
+                                <input
+                                  type="radio"
+                                  name={`answer-${i}`}
+                                  className="size-4 accent-green-600"
+                                  checked={q.options[optIdx] === q.answer}
+                                  onChange={() =>
+                                    markCorrect(i, optIdx)
+                                  }
+                                  aria-label={`Mark option ${
+                                    optIdx + 1
+                                  } correct`}
+                                />
+                                <Input
+                                  value={q.options[optIdx] ?? ""}
+                                  onChange={(e) =>
+                                    updateOption(
+                                      i,
+                                      optIdx,
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder={`Option ${optIdx + 1}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Label htmlFor={`exp-${i}`}>Explanation</Label>
+                            <Textarea
+                              id={`exp-${i}`}
+                              value={q.explanation}
+                              onChange={(e) =>
+                                updateExplanation(i, e.target.value)
+                              }
+                              placeholder="Brief explanation (1–3 sentences)…"
+                              className="text-sm"
+                            />
+                            <p className="text-xs text-zinc-400">
+                              Shown to users after answering.
+                            </p>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex items-center">
+                          <Button
+                            variant="secondary"
+                            onClick={() => deleteQuestion(i)}
+                            className="ms-auto"
+                          >
+                            Delete question
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+
+                    <div>
+                      <Button variant="secondary" onClick={addQuestion}>
+                        + Add question
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+
+                <CardFooter className="flex flex-col gap-3 sm:flex-row">
+                  <Button
+                    onClick={async () => {
+                      if (!quiz?.questions?.length) {
+                        setSaveError(
+                          "Could not save this quiz. Please try again."
+                        )
+                        setSaveMessage(null)
+                        return
+                      }
+                      const user = auth.currentUser
+                      if (!user) {
+                        setSaveError(
+                          "Could not save this quiz. Please try again."
+                        )
+                        setSaveMessage(null)
+                        return
+                      }
+                      const vErr = validate(quiz.questions)
+                      if (vErr) {
+                        setValidationError(vErr)
+                        setSaveMessage(null)
+                        return
+                      }
                       setSaveMessage(null)
-                      return
-                    }
-                    const user = auth.currentUser
-                    if (!user) {
-                      setSaveError("Could not save this quiz. Please try again.")
-                      setSaveMessage(null)
-                      return
-                    }
-                    const vErr = validate(quiz.questions)
-                    if (vErr) {
-                      setValidationError(vErr)
-                      setSaveMessage(null)
-                      return
-                    }
-                    setSaveMessage(null)
-                    setSaveError(null)
-                    setValidationError(null)
-                    try {
-                      setIsSaving(true)
-                      await saveQuiz(user.uid, {
-                        title: title?.trim() || "Untitled quiz",
-                        questions: quiz.questions,
-                        createdAt: Date.now(),
-                      })
                       setSaveError(null)
-                      setSaveMessage("Quiz saved! You can find it on your dashboard.")
-                      router.push("/dashboard")
-                    } catch (err) {
-                      // eslint-disable-next-line no-console
-                      console.error("Save quiz failed", err)
-                      setSaveMessage(null)
-                      setSaveError("Could not save this quiz. Please try again.")
-                    } finally {
-                      setIsSaving(false)
-                    }
-                  }}
-                  disabled={isSaving}
-                  aria-busy={isSaving}
-                >
-                  {isSaving ? "Saving…" : "Save quiz"}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={handleRegenerate}
-                  disabled={isRegenerating}
-                  aria-busy={isRegenerating}
-                >
-                  {isRegenerating ? 'Regenerating…' : 'Regenerate'}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => router.push("/dashboard")}
-                >
-                  Generate another
-                </Button>
-                {saveMessage && <p className="mt-3 text-xs text-emerald-400">{saveMessage}</p>}
-                {saveError && <p className="mt-3 text-xs text-red-400">{saveError}</p>}
-                {validationError && <p className="mt-3 text-xs text-red-400">{validationError}</p>}
-              </CardFooter>
-              {regenError && (
-                <div className="px-6 pb-6 -mt-2 text-xs text-red-400 bg-red-950/40 border border-red-900 rounded-md">
-                  {regenError}
-                </div>
-              )}
-            </>
-          )}
-        </Card>
-      </div>
-    </main>
+                      setValidationError(null)
+                      try {
+                        setIsSaving(true)
+                        await saveQuiz(user.uid, {
+                          title: title?.trim() || "Untitled quiz",
+                          questions: quiz.questions,
+                          createdAt: Date.now(),
+                        })
+                        setSaveError(null)
+                        setSaveMessage(
+                          "Quiz saved! You can find it on your dashboard."
+                        )
+                        router.push("/dashboard")
+                      } catch (err) {
+                        // eslint-disable-next-line no-console
+                        console.error("Save quiz failed", err)
+                        setSaveMessage(null)
+                        setSaveError(
+                          "Could not save this quiz. Please try again."
+                        )
+                      } finally {
+                        setIsSaving(false)
+                      }
+                    }}
+                    disabled={isSaving}
+                    aria-busy={isSaving}
+                  >
+                    {isSaving ? "Saving…" : "Save quiz"}
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    onClick={handleRegenerate}
+                    disabled={isRegenerating}
+                    aria-busy={isRegenerating}
+                  >
+                    {isRegenerating ? "Regenerating…" : "Regenerate"}
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    onClick={() => router.push("/dashboard")}
+                  >
+                    Generate another
+                  </Button>
+
+                  <div className="mt-2 flex flex-col gap-1 text-xs">
+                    {saveMessage && (
+                      <p className="text-emerald-400">{saveMessage}</p>
+                    )}
+                    {saveError && (
+                      <p className="text-red-400">{saveError}</p>
+                    )}
+                    {validationError && (
+                      <p className="text-red-400">
+                        {validationError}
+                      </p>
+                    )}
+                  </div>
+                </CardFooter>
+
+                {regenError && (
+                  <div className="px-6 pb-6 -mt-2 text-xs text-red-400 bg-red-950/40 border border-red-900 rounded-md">
+                    {regenError}
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+        </div>
+      </PageContainer>
+    </AppShell>
   )
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { db } from "@/lib/firestore";
 import { doc, getDoc } from "firebase/firestore";
+import AppShell, { PageContainer } from "@/components/layout/app-shell";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -25,14 +26,17 @@ export default function InstitutionDashboardPage() {
         // Load user profile
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
+
         if (!userSnap.exists()) {
           router.push("/auth/institution");
           return;
         }
+
         const profile = userSnap.data() as {
           role?: string;
           institutionId?: string | null;
         };
+
         if (profile.role !== "institution") {
           router.push("/dashboard");
           return;
@@ -40,15 +44,13 @@ export default function InstitutionDashboardPage() {
 
         // Load institution document
         const instId = profile.institutionId;
+
         if (instId) {
           const instRef = doc(db, "institutions", instId);
           const instSnap = await getDoc(instRef);
-          if (instSnap.exists()) {
-            const data = instSnap.data() as { name?: string };
-            setInstitutionName(data.name || "Your Institution");
-          } else {
-            setInstitutionName("Your Institution");
-          }
+          const data = instSnap.data() as { name?: string } | undefined;
+
+          setInstitutionName(data?.name || "Your Institution");
         } else {
           setInstitutionName("Your Institution");
         }
@@ -56,50 +58,74 @@ export default function InstitutionDashboardPage() {
         setLoading(false);
       }
     };
+
     run();
   }, [router]);
 
   if (loading) {
     return (
-  <main className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center px-4 w-full max-w-screen-sm mx-auto">
-        <div className="text-sm text-zinc-400">Loading…</div>
-      </main>
+      <AppShell>
+        <PageContainer>
+          <div className="flex h-[60vh] items-center justify-center text-sm text-zinc-400">
+            Loading…
+          </div>
+        </PageContainer>
+      </AppShell>
     );
   }
 
   return (
-  <main className="bg-zinc-950 text-zinc-50 flex flex-col items-stretch min-h-screen px-4 w-full max-w-screen-sm mx-auto">
-      {/* Hero to match app style */}
-      <section className="relative flex flex-col justify-center items-center gap-4 text-center px-6 md:px-12 pt-28 pb-10">
-        <div aria-hidden className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
-        </div>
-        <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl leading-tight bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
-          Institution Dashboard
-        </h1>
-        <p className="relative z-10 max-w-2xl text-zinc-300 leading-relaxed text-sm md:text-base">
-          Welcome to {institutionName}
-        </p>
-      </section>
-
-      <div className="max-w-5xl mx-auto w-full px-6 md:px-10 pb-24">
-        <Card className="border-zinc-800 bg-zinc-900/40">
-          <CardHeader>
-            <CardTitle className="text-xl">What’s next</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-zinc-300">
-            <p>Coming soon: add teachers, manage classes, view analytics.</p>
-            <div className="flex gap-3">
-              <Button onClick={() => router.push("/dashboard")} variant="outline">
-                Back to dashboard
-              </Button>
-              <Button onClick={() => router.push("/pricing")} className="bg-violet-600 hover:bg-violet-500">
-                Manage subscription
-              </Button>
+    <AppShell>
+      <PageContainer>
+        <div className="space-y-10 lg:space-y-12">
+          {/* Hero header */}
+          <section className="text-center pt-2 lg:pt-0">
+            <div className="mx-auto w-full max-w-4xl">
+              <h1 className="text-2xl font-semibold sm:text-3xl md:text-4xl lg:text-5xl">
+                Institution Dashboard
+              </h1>
+              <p className="mt-4 text-sm text-slate-400 md:text-base">
+                Welcome to {institutionName}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+          </section>
+
+          {/* Main card */}
+          <div className="mx-auto w-full max-w-3xl">
+            <Card className="rounded-3xl border border-white/5 bg-card/70 backdrop-blur shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold">
+                  What’s next
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-6 text-zinc-300">
+                <p className="leading-relaxed">
+                  Coming soon: add teachers, manage classes, view analytics, and more powerful
+                  tools for running your institution on QuizTheory.
+                </p>
+
+                <div className="flex flex-wrap gap-4 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/dashboard")}
+                    className="border-white/10 text-zinc-200 hover:bg-white/5"
+                  >
+                    Back to dashboard
+                  </Button>
+
+                  <Button
+                    onClick={() => router.push("/pricing")}
+                    className="bg-violet-600 hover:bg-violet-500"
+                  >
+                    Manage subscription
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </PageContainer>
+    </AppShell>
   );
 }
