@@ -20,10 +20,33 @@ function sanitizeBase64(input: string): string {
 
 export async function POST(req: Request) {
   try {
-    const body: ExtractRequestBody = await req.json().catch(() => ({}));
-    const { fileData, fileType } = body;
+    let fileBuffer: Buffer | null = null;
+    let fileType: string | undefined;
+    let fileData: string | undefined;
 
-    if (!fileData || !fileType) {
+    // Check if multipart/form-data (file upload)
+    const contentType = req.headers.get("content-type") || "";
+    if (contentType.startsWith("multipart/form-data")) {
+      // Use the web API to parse form data
+      const formData = await req.formData();
+      const file = formData.get("file");
+      if (file && typeof file === "object" && "arrayBuffer" in file) {
+        const arrBuf = await file.arrayBuffer();
+        fileBuffer = Buffer.from(arrBuf);
+        // @ts-ignore
+        fileType = file.type;
+      }
+    } else {
+      // Fallback to JSON body (legacy)
+      const body: ExtractRequestBody = await req.json().catch(() => ({}));
+      fileData = body.fileData;
+      fileType = body.fileType;
+      if (fileData) {
+        fileBuffer = Buffer.from(sanitizeBase64(fileData), "base64");
+      }
+    }
+
+    if (!fileBuffer || !fileType) {
       return NextResponse.json(
         { error: "Missing fileData or fileType." },
         { status: 400 }
@@ -37,9 +60,7 @@ export async function POST(req: Request) {
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           pdfParse = require("pdf-parse") as (data: Buffer) => Promise<{ text?: string }>;
         }
-        const cleaned = sanitizeBase64(fileData);
-        const buffer = Buffer.from(cleaned, "base64");
-        const parsed = await pdfParse(buffer);
+        const parsed = await pdfParse(fileBuffer);
         const extractedText = (parsed.text || "").trim();
         return NextResponse.json({ text: extractedText });
       } catch (err) {
@@ -51,9 +72,45 @@ export async function POST(req: Request) {
       }
     }
 
-    // Image placeholder (OCR to be added later)
+
+    // Image OCR using tesseract.js
     if (fileType.startsWith("image/")) {
-      return NextResponse.json({ text: "Image text extraction coming soon." });
+      try {
+        // Lazy load tesseract.js
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const Tesseract = require("tesseract.js");
+        // Timeout helper
+        function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+          return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error("OCR timed out")), ms);
+            promise.then(
+              (val) => {
+                clearTimeout(timer);
+                resolve(val);
+              },
+              (err) => {
+                clearTimeout(timer);
+                reject(err);
+              }
+            );
+          });
+        }
+        // Run OCR with 20s timeout
+        const result = await withTimeout(
+          Tesseract.recognize(fileBuffer, "eng", { logger: () => {} }),
+          20000
+        );
+        const data = (result as any).data;
+        const extractedText = (data && data.text ? data.text : "").trim();
+        return NextResponse.json({ text: extractedText });
+      } catch (err) {
+        console.error("Image OCR error", err);
+        const errorMsg = (err && typeof err === "object" && "message" in err) ? (err as any).message : "Failed to extract text from image.";
+        return NextResponse.json(
+          { error: errorMsg },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json(

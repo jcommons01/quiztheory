@@ -1,0 +1,2 @@
+// This file is used to install tesseract.js for OCR in the backend
+// Run: npm install tesseract.js

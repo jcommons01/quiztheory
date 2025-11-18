@@ -127,3 +127,16 @@ html {
     overflow-y: scroll;
   }
 }
+/* Prevent layout shift when modal/dialog opens by always reserving scrollbar space */
+html {
+  overflow-y: scroll;
+}
+
+/* Hide vertical scrollbar but allow scrolling (works for most browsers) */
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}

@@ -46,61 +46,79 @@ const AuthPageClient: React.FC = () => {
   const [signupError, setSignupError] = useState<string>("");
   const [signupLoading, setSignupLoading] = useState(false);
 
-  // Redirect if already signed in
-  useEffect(() => {
-    const unsub = auth.onAuthStateChanged((user) => {
-      if (user) {
-        const pending =
-          typeof window !== "undefined" ? sessionStorage.getItem("pending-join-code") : null;
-        if (pending) {
-          void (async () => {
-            try {
-              await joinClassByCode(user.uid, pending);
-            } catch {
-              /* ignore */
-            }
-            try {
-              sessionStorage.removeItem("pending-join-code");
-            } catch {}
-            router.push("/dashboard#classes");
-          })();
-        } else {
-          router.push("/dashboard");
-        }
-      }
-    });
-    return () => unsub();
-  }, [router]);
-
   // Capture ?join=CODE for class joining after auth
   useEffect(() => {
     const code = (search?.get("join") || "").toUpperCase();
     if (code) {
       try {
         sessionStorage.setItem("pending-join-code", code);
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
   }, [search]);
+
+  // On mount: if already signed in, redirect appropriately
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const pending =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("pending-join-code")
+        : null;
+
+    if (pending) {
+      void (async () => {
+        try {
+          await joinClassByCode(user.uid, pending);
+        } catch {
+          // ignore failures here – user can still use the app
+        }
+        try {
+          sessionStorage.removeItem("pending-join-code");
+        } catch {
+          // ignore
+        }
+        router.replace("/dashboard#classes");
+      })();
+    } else {
+      router.replace("/dashboard");
+    }
+  }, [router]);
+
+  async function handlePostAuthRedirect() {
+    const pending =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("pending-join-code")
+        : null;
+    const user = auth.currentUser;
+
+    if (pending && user) {
+      try {
+        await joinClassByCode(user.uid, pending);
+      } catch {
+        // ignore
+      }
+      try {
+        sessionStorage.removeItem("pending-join-code");
+      } catch {
+        // ignore
+      }
+      router.push("/dashboard#classes");
+    } else {
+      router.push("/dashboard");
+    }
+  }
 
   const onLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
     setLoginLoading(true);
+
     try {
       await signInWithEmail(loginEmail.trim(), loginPassword);
-      const pending =
-        typeof window !== "undefined" ? sessionStorage.getItem("pending-join-code") : null;
-      if (pending && auth.currentUser) {
-        try {
-          await joinClassByCode(auth.currentUser.uid, pending);
-        } catch {}
-        try {
-          sessionStorage.removeItem("pending-join-code");
-        } catch {}
-        router.push("/dashboard#classes");
-      } else {
-        router.push("/dashboard");
-      }
+      await handlePostAuthRedirect();
     } catch (err: any) {
       setLoginError(humanizeFirebaseError(err));
     } finally {
@@ -120,19 +138,7 @@ const AuthPageClient: React.FC = () => {
     setSignupLoading(true);
     try {
       await signUpWithEmail(signupEmail.trim(), signupPassword);
-      const pending =
-        typeof window !== "undefined" ? sessionStorage.getItem("pending-join-code") : null;
-      if (pending && auth.currentUser) {
-        try {
-          await joinClassByCode(auth.currentUser.uid, pending);
-        } catch {}
-        try {
-          sessionStorage.removeItem("pending-join-code");
-        } catch {}
-        router.push("/dashboard#classes");
-      } else {
-        router.push("/dashboard");
-      }
+      await handlePostAuthRedirect();
     } catch (err: any) {
       setSignupError(humanizeFirebaseError(err));
     } finally {
@@ -140,7 +146,7 @@ const AuthPageClient: React.FC = () => {
     }
   };
 
-  // NOTE: no <main> / hero / Card here – this is just the inner content
+  // Inner card content only – wrapper/hero is in app/auth/page.tsx
   return (
     <div className="space-y-5">
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>

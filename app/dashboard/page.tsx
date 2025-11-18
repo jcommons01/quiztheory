@@ -86,7 +86,13 @@ function UpgradeToProButton() {
     <Button
       onClick={handleUpgrade}
       disabled={loading}
-      className="mt-2 w-full bg-violet-600 hover:bg-violet-500 sm:w-auto"
+      className="mt-2 w-full bg-white text-[#18181b] hover:bg-zinc-100 border border-zinc-300 font-semibold sm:w-auto"
+      style={{
+        // Ensure text color is very dark grey (almost black)
+        color: '#18181b',
+        backgroundColor: '#fff',
+        borderColor: '#d4d4d8',
+      }}
     >
       {loading ? "Redirecting…" : "Upgrade to Pro"}
     </Button>
@@ -98,6 +104,16 @@ function UpgradeToProButton() {
 /* -------------------------------------------------------------------------- */
 
 export default function DashboardPage() {
+    // Listen for custom event to open join dialog from mobile nav
+    React.useEffect(() => {
+      function handleOpenJoinDialog() {
+        setShowJoinDialog(true);
+      }
+      window.addEventListener('open-join-class-dialog', handleOpenJoinDialog);
+      return () => {
+        window.removeEventListener('open-join-class-dialog', handleOpenJoinDialog);
+      };
+    }, []);
   const router = useRouter();
 
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -106,7 +122,16 @@ export default function DashboardPage() {
   const [mode, setMode] = React.useState<"text" | "file" | "image">("text");
   const [text, setText] = React.useState("");
   const [fileInput, setFileInput] = React.useState<File | null>(null);
-  const [imageInput, setImageInput] = React.useState<File | null>(null);
+  const [imageInputs, setImageInputs] = React.useState<File[]>([]);
+  // Image previews for selected images
+  const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    const urls = imageInputs.map((img: File) => URL.createObjectURL(img));
+    setImagePreviews(urls);
+    return () => {
+      urls.forEach((url: string) => URL.revokeObjectURL(url));
+    };
+  }, [imageInputs]);
   const [numQuestions, setNumQuestions] = React.useState(10);
   const [difficulty, setDifficulty] = React.useState("Auto");
   const [isLoading, setIsLoading] = React.useState(false);
@@ -478,7 +503,7 @@ export default function DashboardPage() {
   async function handleGenerate() {
     if (mode === "text" && !text.trim()) return;
     if (mode === "file" && !fileInput) return;
-    if (mode === "image" && !imageInput) return;
+    if (mode === "image" && imageInputs.length === 0) return;
 
     setIsLoading(true);
     setLoadingPhase(null);
@@ -489,10 +514,10 @@ export default function DashboardPage() {
 
       if (mode === "text") {
         sourceText = text.trim();
-      } else {
+      } else if (mode === "file") {
         setLoadingPhase("extract");
         const fd = new FormData();
-        fd.append("file", (mode === "file" ? fileInput : imageInput)!);
+        fd.append("file", fileInput!);
         const extractRes = await fetch("/api/extract", {
           method: "POST",
           body: fd,
@@ -517,6 +542,40 @@ export default function DashboardPage() {
         };
         if (!data.text) return;
         sourceText = data.text.trim();
+      } else if (mode === "image") {
+        setLoadingPhase("extract");
+        let allText = "";
+        for (const img of imageInputs) {
+          const fd = new FormData();
+          fd.append("file", img);
+          const extractRes = await fetch("/api/extract", {
+            method: "POST",
+            body: fd,
+          });
+          if (!extractRes.ok) {
+            try {
+              const errJson = await extractRes.json();
+              setGenerationError(
+                errJson.error ??
+                  "Something went wrong generating your quiz."
+              );
+            } catch {
+              setGenerationError(
+                "Something went wrong generating your quiz."
+              );
+            }
+            return;
+          }
+          const data = (await extractRes.json()) as {
+            text?: string;
+            error?: string;
+          };
+          if (data.text) {
+            allText += data.text.trim() + "\n";
+          }
+        }
+        if (!allText.trim()) return;
+        sourceText = allText.trim();
       }
 
       if (!sourceText) return;
@@ -579,22 +638,60 @@ export default function DashboardPage() {
       },
       onDrop: (e: React.DragEvent) => {
         e.preventDefault();
-        const f = e.dataTransfer.files?.[0];
-        if (!f) return;
-        if (
-          !accept
-            .split(",")
-            .some((ext) =>
-              f.name
-                .toLowerCase()
-                .endsWith(ext.trim().replace(/\./, ""))
-            )
-        )
-          return;
-        kind === "file" ? setFileInput(f) : setImageInput(f);
+        const files = Array.from(e.dataTransfer.files || []);
+        if (kind === "file") {
+          const f = files[0];
+          if (!f) return;
+          if (
+            !accept
+              .split(",")
+              .some((ext) =>
+                f.name
+                  .toLowerCase()
+                  .endsWith(ext.trim().replace(/\./, ""))
+              )
+          )
+            return;
+          setFileInput(f);
+        } else {
+          // image mode: allow up to 5 images
+          const valid = files.filter((f) =>
+            accept
+              .split(",")
+              .some((ext) =>
+                f.name
+                  .toLowerCase()
+                  .endsWith(ext.trim().replace(/\./, ""))
+              )
+          );
+          setImageInputs((prev) =>
+            [...prev, ...valid].slice(0, 5)
+          );
+        }
       },
     };
   }
+
+
+  // Paste handler for screenshots in image mode (must be before any return/conditional)
+  React.useEffect(() => {
+    function handlePaste(e: ClipboardEvent) {
+      if (mode !== "image") return;
+      if (!e.clipboardData) return;
+      const items = Array.from(e.clipboardData.items);
+      const imageItems = items.filter(item => item.type.startsWith("image/"));
+      if (imageItems.length === 0) return;
+      e.preventDefault();
+      const files = imageItems.map(item => item.getAsFile()).filter(Boolean) as File[];
+      if (files.length === 0) return;
+      setImageInputs(prev => {
+        const newFiles = [...prev, ...files].slice(0, 5);
+        return newFiles;
+      });
+    }
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [mode]);
 
   if (checkingAuth) {
     return (
@@ -618,9 +715,8 @@ export default function DashboardPage() {
     );
   }
 
-  /* ---------------------------------------------------------------------- */
-  /*  Main render                                                           */
-  /* ---------------------------------------------------------------------- */
+
+
 
   return (
     <AppShell
@@ -628,7 +724,7 @@ export default function DashboardPage() {
         auth.currentUser && userProfile?.role === "user" ? (
           <Button
             size="sm"
-            variant="outline"
+            variant={showJoinDialog ? "default" : "outline"}
             onClick={() => setShowJoinDialog(true)}
           >
             Join a class
@@ -662,7 +758,7 @@ export default function DashboardPage() {
             {/* Free-plan notice + button */}
             {!isProOrAbove && (
               <div className="mt-4 flex flex-col items-center gap-3">
-                <div className="w-full max-w-full rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1 text-center text-[11px] text-amber-200 md:text-xs wrap-break-word">
+                <div className="inline-block rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1 text-center text-[11px] text-amber-200 md:text-xs wrap-break-word" style={{width: 'auto', minWidth: 0}}>
                   Free plan: 3 quizzes per month. Upgrade to unlock PDF &amp;
                   image to quiz.
                 </div>
@@ -904,6 +1000,9 @@ export default function DashboardPage() {
 
                 {/* IMAGE MODE */}
                 <TabsContent value="image" className="space-y-4 pt-2">
+                  <div className="text-xs text-zinc-500 mb-2">
+                    Tip: You can paste a screenshot here to upload it instantly.
+                  </div>
                   <div
                     className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-zinc-700 p-6 text-sm text-zinc-400 transition hover:border-zinc-500"
                     {...uploadAreaProps(".png,.jpg,.jpeg", "image")}
@@ -912,21 +1011,55 @@ export default function DashboardPage() {
                     }
                   >
                     <span>
-                      {imageInput
-                        ? imageInput.name
-                        : "Click or drag an image (PNG/JPG) here"}
+                      {imageInputs.length > 0
+                        ? imageInputs.map((img, i) => (
+                            <span key={i} className="block truncate">
+                              {img.name}
+                            </span>
+                          ))
+                        : "Click or drag up to 5 images (PNG/JPG) here"}
                     </span>
                     <input
                       id="image-input"
                       type="file"
                       accept="image/png,image/jpg,image/jpeg"
                       className="hidden"
+                      multiple
                       onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) setImageInput(f);
+                        const files = Array.from(e.target.files || []);
+                        setImageInputs((prev) =>
+                          [...prev, ...files].slice(0, 5)
+                        );
                       }}
                     />
                   </div>
+                  {imageInputs.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {imageInputs.map((img, i) => (
+                        <div key={i} className="flex flex-col items-center gap-1 bg-zinc-800 rounded px-2 py-2 text-xs max-w-[110px]">
+                          {imagePreviews[i] && (
+                            <img
+                              src={imagePreviews[i]}
+                              alt={img.name}
+                              className="w-20 h-20 object-cover rounded border border-zinc-700 mb-1"
+                              style={{ background: '#18181b' }}
+                            />
+                          )}
+                          <span className="truncate max-w-[90px] text-center">{img.name}</span>
+                          <button
+                            type="button"
+                            className="ml-1 text-red-400 hover:text-red-300"
+                            aria-label="Remove image"
+                            onClick={() =>
+                              setImageInputs((prev) => prev.filter((_, idx) => idx !== i))
+                            }
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
                       <Label htmlFor="num-questions-image">
@@ -980,7 +1113,7 @@ export default function DashboardPage() {
                     onClick={handleGenerate}
                     disabled={
                       isLoading ||
-                      !imageInput ||
+                      imageInputs.length === 0 ||
                       limitReached ||
                       !isProOrAbove
                     }
@@ -1063,58 +1196,9 @@ export default function DashboardPage() {
                         You haven’t created any quizzes yet.
                       </div>
                       <div className="mt-1 text-sm text-zinc-400">
-                        Generate your first quiz or explore the demos below.
+                        Generate your first quiz.
                       </div>
                     </div>
-                    {demoQuizzes.length > 0 && (
-                      <div className="space-y-3 pt-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-medium tracking-tight">
-                            Demo quizzes
-                          </h3>
-                          <span className="text-[11px] text-zinc-500">
-                            Read-only previews
-                          </span>
-                        </div>
-                        <div className="space-y-3">
-                          {demoQuizzes.map((d) => (
-                            <Card
-                              key={d.id}
-                              className="border-zinc-800"
-                            >
-                              <CardContent className="py-4">
-                                <div className="flex items-center justify-between gap-4">
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2 truncate font-medium">
-                                      <span className="truncate">
-                                        {d.title}
-                                      </span>
-                                      <span className="inline-flex items-center rounded-full border border-indigo-600/60 bg-indigo-900/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-300">
-                                        Demo
-                                      </span>
-                                    </div>
-                                    <div className="text-sm text-zinc-400">
-                                      {d.questionsCount} questions • Preview
-                                      only
-                                    </div>
-                                  </div>
-                                  <div className="flex shrink-0 items-center gap-2">
-                                    <Button
-                                      onClick={() => {
-                                        setActiveDemoQuiz(d);
-                                        setShowDemoDialog(true);
-                                      }}
-                                    >
-                                      Open
-                                    </Button>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -1207,55 +1291,7 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* Demo section below real quizzes */}
-                {quizzes.length > 0 && demoQuizzes.length > 0 && (
-                  <div className="space-y-3 pt-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium tracking-tight">
-                        Demo quizzes
-                      </h3>
-                      <span className="text-[11px] text-zinc-500">
-                        Read-only previews
-                      </span>
-                    </div>
-                    <div className="space-y-3">
-                      {demoQuizzes.map((d) => (
-                        <Card
-                          key={d.id}
-                          className="border-zinc-800"
-                        >
-                          <CardContent className="py-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 truncate font-medium">
-                                  <span className="truncate">
-                                    {d.title}
-                                  </span>
-                                  <span className="inline-flex items-center rounded-full border border-indigo-600/60 bg-indigo-900/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-300">
-                                    Demo
-                                  </span>
-                                </div>
-                                <div className="text-sm text-zinc-400">
-                                  {d.questionsCount} questions • Preview only
-                                </div>
-                              </div>
-                              <div className="flex shrink-0 items-center gap-2">
-                                <Button
-                                  onClick={() => {
-                                    setActiveDemoQuiz(d);
-                                    setShowDemoDialog(true);
-                                  }}
-                                >
-                                  Open
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* Demo section removed as requested */}
 
                 {/* Classes (teacher / institution) */}
                 {userProfile &&

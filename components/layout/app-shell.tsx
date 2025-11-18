@@ -91,12 +91,15 @@ export default function AppShell({ children, extraActions }: AppShellProps) {
               </span>
             )}
 
-            {extraActions}
+            {/* Ensure extraActions (e.g., 'Join a class' button) matches the oval shape of other buttons */}
+            {extraActions && React.cloneElement(extraActions as React.ReactElement<any>, {
+              className: cn((extraActions as React.ReactElement<any>).props.className, 'rounded-full px-4'),
+            })}
 
             <Link href="/account">
               <Button
                 size="sm"
-                variant="outline"
+                variant={pathname === "/account" ? "default" : "outline"}
                 className="rounded-full px-4 text-xs sm:text-sm"
               >
                 Account
@@ -108,9 +111,9 @@ export default function AppShell({ children, extraActions }: AppShellProps) {
               variant="outline"
               className="rounded-full px-4 text-xs sm:text-sm"
               type="button"
-              onClick={handleLogout}
+              onClick={email ? handleLogout : () => { window.location.href = "/auth"; }}
             >
-              Log out
+              {email ? "Log out" : "Log in"}
             </Button>
           </div>
 
@@ -143,6 +146,20 @@ export default function AppShell({ children, extraActions }: AppShellProps) {
                       {item.label}
                     </button>
                   ))}
+                  {/* Join a class button for mobile nav, only for authenticated users with role 'user' (mirrors extraActions logic) */}
+                  {auth.currentUser && extraActions && (
+                    <button
+                      type="button"
+                      className="flex w-full items-center px-3 py-2 text-left text-zinc-200 hover:bg-white/5"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        // Dispatch a custom event to open the join dialog in dashboard
+                        window.dispatchEvent(new CustomEvent('open-join-class-dialog'));
+                      }}
+                    >
+                      Join a class
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="flex w-full items-center px-3 py-2 text-left text-zinc-200 hover:bg-white/5"
