@@ -27,9 +27,9 @@ import AppShell, { PageContainer } from "@/components/layout/app-shell";
 const db = getFirestore();
 
 export default function ClassResultsPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ classId: string }>();
   const router = useRouter();
-  const classId = params?.id;
+  const classId = params?.classId;
 
   const [checkingAuth, setCheckingAuth] = useState(true);
 
