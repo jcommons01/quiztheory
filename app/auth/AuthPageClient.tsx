@@ -2,11 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { signInWithEmail, signUpWithEmail } from "@/lib/auth";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +46,7 @@ const AuthPageClient: React.FC = () => {
   const [signupError, setSignupError] = useState<string>("");
   const [signupLoading, setSignupLoading] = useState(false);
 
+  // Redirect if already signed in
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {
       if (user) {
@@ -57,7 +56,7 @@ const AuthPageClient: React.FC = () => {
           void (async () => {
             try {
               await joinClassByCode(user.uid, pending);
-            } catch (e) {
+            } catch {
               /* ignore */
             }
             try {
@@ -73,6 +72,7 @@ const AuthPageClient: React.FC = () => {
     return () => unsub();
   }, [router]);
 
+  // Capture ?join=CODE for class joining after auth
   useEffect(() => {
     const code = (search?.get("join") || "").toUpperCase();
     if (code) {
@@ -140,142 +140,120 @@ const AuthPageClient: React.FC = () => {
     }
   };
 
+  // NOTE: no <main> / hero / Card here – this is just the inner content
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col items-stretch overflow-x-hidden">
-      {/* Hero (matches homepage but constrained for mobile) */}
-      <section className="relative flex flex-col justify-center items-center gap-8 text-center min-h-screen w-full max-w-xl mx-auto px-4 pb-24 pt-32 sm:pt-40">
-        {/* Decorative gradient (same as /) */}
-        <div aria-hidden className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 left-1/2 -translate-x-1/2 size-168 rounded-full bg-linear-to-br from-violet-600/30 via-fuchsia-500/10 to-transparent blur-3xl opacity-40" />
-        </div>
+    <div className="space-y-5">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+        <TabsList className="w-full">
+          <TabsTrigger value="login" className="flex-1">
+            Login
+          </TabsTrigger>
+          <TabsTrigger value="signup" className="flex-1">
+            Sign up
+          </TabsTrigger>
+        </TabsList>
 
-        <h1 className="relative z-10 font-bold tracking-tight text-3xl md:text-5xl max-w-xl leading-[1.05] bg-clip-text text-transparent bg-linear-to-r from-zinc-100 via-zinc-200 to-zinc-400">
-          Turn any text, PDF, or image into a quiz.
-        </h1>
+        <TabsContent value="login" className="mt-4">
+          <form onSubmit={onLogin} className="space-y-4">
+            <div className="space-y-2 text-left">
+              <Label htmlFor="login-email" className="text-zinc-200">
+                Email
+              </Label>
+              <Input
+                id="login-email"
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-2 text-left">
+              <Label htmlFor="login-password" className="text-zinc-200">
+                Password
+              </Label>
+              <Input
+                id="login-password"
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            {loginError && (
+              <p className="text-sm text-red-500" role="alert">
+                {loginError}
+              </p>
+            )}
+            <Button type="submit" className="w-full" disabled={loginLoading}>
+              {loginLoading ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+        </TabsContent>
 
-        <p className="relative z-10 max-w-xl text-base md:text-xl text-zinc-300 leading-relaxed">
-          AI-powered quiz generation for students, teachers, and training organisations.
-        </p>
+        <TabsContent value="signup" className="mt-4">
+          <form onSubmit={onSignup} className="space-y-4">
+            <div className="space-y-2 text-left">
+              <Label htmlFor="signup-email" className="text-zinc-200">
+                Email
+              </Label>
+              <Input
+                id="signup-email"
+                type="email"
+                value={signupEmail}
+                onChange={(e) => setSignupEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-2 text-left">
+              <Label htmlFor="signup-password" className="text-zinc-200">
+                Password
+              </Label>
+              <Input
+                id="signup-password"
+                type="password"
+                value={signupPassword}
+                onChange={(e) => setSignupPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <div className="space-y-2 text-left">
+              <Label htmlFor="signup-confirm" className="text-zinc-200">
+                Confirm password
+              </Label>
+              <Input
+                id="signup-confirm"
+                type="password"
+                value={signupConfirm}
+                onChange={(e) => setSignupConfirm(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            {signupError && (
+              <p className="text-sm text-red-500" role="alert">
+                {signupError}
+              </p>
+            )}
+            <Button type="submit" className="w-full" disabled={signupLoading}>
+              {signupLoading ? "Creating account…" : "Create account"}
+            </Button>
+          </form>
+        </TabsContent>
+      </Tabs>
 
-        {/* Auth Card */}
-        <div className="relative z-10 w-full max-w-md">
-          <Card className="bg-zinc-900/70 border border-zinc-800 backdrop-blur-sm">
-            <CardContent className="pt-6 pb-6">
-              <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="login" className="flex-1">
-                    Login
-                  </TabsTrigger>
-                  <TabsTrigger value="signup" className="flex-1">
-                    Sign up
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="login" className="mt-4">
-                  <form onSubmit={onLogin} className="space-y-4">
-                    <div className="space-y-2 text-left">
-                      <Label htmlFor="login-email" className="text-zinc-200">
-                        Email
-                      </Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        required
-                        placeholder="you@example.com"
-                      />
-                    </div>
-                    <div className="space-y-2 text-left">
-                      <Label htmlFor="login-password" className="text-zinc-200">
-                        Password
-                      </Label>
-                      <Input
-                        id="login-password"
-                        type="password"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        required
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    {loginError && (
-                      <p className="text-sm text-red-500" role="alert">
-                        {loginError}
-                      </p>
-                    )}
-                    <Button type="submit" className="w-full" disabled={loginLoading}>
-                      {loginLoading ? "Signing in…" : "Sign in"}
-                    </Button>
-                  </form>
-                </TabsContent>
-
-                <TabsContent value="signup" className="mt-4">
-                  <form onSubmit={onSignup} className="space-y-4">
-                    <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-email" className="text-zinc-200">
-                        Email
-                      </Label>
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        required
-                        placeholder="you@example.com"
-                      />
-                    </div>
-                    <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-password" className="text-zinc-200">
-                        Password
-                      </Label>
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        required
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div className="space-y-2 text-left">
-                      <Label htmlFor="signup-confirm" className="text-zinc-200">
-                        Confirm password
-                      </Label>
-                      <Input
-                        id="signup-confirm"
-                        type="password"
-                        value={signupConfirm}
-                        onChange={(e) => setSignupConfirm(e.target.value)}
-                        required
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    {signupError && (
-                      <p className="text-sm text-red-500" role="alert">
-                        {signupError}
-                      </p>
-                    )}
-                    <Button type="submit" className="w-full" disabled={signupLoading}>
-                      {signupLoading ? "Creating account…" : "Create account"}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-
-              <div className="mt-5 flex flex-col items-center gap-1">
-                <Button asChild variant="outline" size="sm" className="w-full">
-                  <Link href="/auth/institution">Sign up as an institution</Link>
-                </Button>
-                <span className="text-[11px] text-zinc-500">
-                  For schools, colleges, and organisations
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-    </main>
+      <div className="mt-3 flex flex-col items-center gap-1">
+        <Button asChild variant="outline" size="sm" className="w-full">
+          <Link href="/auth/institution">Sign up as an institution</Link>
+        </Button>
+        <span className="text-[11px] text-zinc-500">
+          For schools, colleges, and organisations
+        </span>
+      </div>
+    </div>
   );
 };
 

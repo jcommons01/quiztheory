@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
 import Link from "next/link";
 
 import AppShell, { PageContainer } from "@/components/layout/app-shell";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface DemoQuestion {
@@ -14,114 +20,147 @@ interface DemoQuestion {
   explanation?: string;
 }
 
-const DEMO_QUESTIONS: DemoQuestion[] = [
+// These are product-style questions that describe how QuizTheory works.
+// You can tweak wording to exactly match your marketing copy.
+const BASE_QUESTIONS: DemoQuestion[] = [
   {
-    question: "What is the primary benefit of using QuizTheory?",
+    question: "What is the main benefit of using QuizTheory for revision?",
     options: [
-      "Manual question writing",
-      "AI-powered instant quiz generation",
-      "Only flashcard review",
-      "Printed worksheet creation",
+      "It prints worksheets automatically",
+      "It turns your own notes into auto-marked quizzes in seconds",
+      "It replaces teachers completely",
+      "It only stores flashcards for later",
     ],
-    answer: "AI-powered instant quiz generation",
+    answer: "It turns your own notes into auto-marked quizzes in seconds",
     explanation:
-      "QuizTheory converts source material like notes or PDFs directly into structured quizzes in seconds.",
+      "QuizTheory takes your notes, PDFs or images and generates structured, self-marking quizzes from them.",
   },
   {
-    question: "Which types of content can you upload?",
+    question:
+      "Which types of content can you turn into quizzes with QuizTheory?",
     options: [
-      "Only plain text",
-      "Notes, PDFs, and images",
-      "Only video files",
-      "Only audio recordings",
+      "Only plain text typed by hand",
+      "Notes, PDFs, and textbook or worksheet photos",
+      "Only videos and audio files",
+      "Only multiple-choice questions you write manually",
     ],
-    answer: "Notes, PDFs, and images",
+    answer: "Notes, PDFs, and textbook or worksheet photos",
     explanation:
-      "Users can bring diverse study resources—typed notes, PDF documents, or textbook photos—to generate quizzes.",
+      "You can paste notes, upload PDFs, or use clear photos of pages to generate questions.",
   },
   {
-    question: "Who commonly uses QuizTheory?",
-    options: ["Gamers", "Students and educators", "Musicians", "Gardeners"],
-    answer: "Students and educators",
+    question:
+      "What can you do on the QuizTheory quiz editor screen after generation?",
+    options: [
+      "Only delete the quiz",
+      "Edit questions, change options, and update explanations",
+      "Download the raw AI prompt",
+      "Change colours but not the questions",
+    ],
+    answer: "Edit questions, change options, and update explanations",
     explanation:
-      "Primary users include students self-studying and educators preparing assessments or practice sets.",
+      "In the editor you can tweak wording, adjust answers, and add short explanations before saving.",
   },
   {
-    question: "What happens when you share a quiz link?",
+    question:
+      "How does sharing a quiz with a class or friend usually work in QuizTheory?",
     options: [
-      "The recipient must create an account first",
-      "The recipient can take the quiz immediately",
-      "It downloads a ZIP archive",
-      "It emails support",
+      "You must export a PDF and email it",
+      "You send them a public quiz link they can open instantly",
+      "They must sign up and search for the quiz ID manually",
+      "You need to invite them by phone number",
     ],
-    answer: "The recipient can take the quiz immediately",
+    answer: "You send them a public quiz link they can open instantly",
     explanation:
-      "Public quiz links allow frictionless access—no sign-up required for taking the quiz.",
+      "Public quiz links let people take a quiz straight away in the browser, no extra setup needed.",
   },
   {
-    question: "What can you do after finishing a demo quiz?",
+    question:
+      "What happens on the results side when students or team members finish a quiz?",
     options: [
-      "Export to CSV only",
-      "Retry or create your own quiz",
-      "Automatically grade peers",
-      "Print certificates",
+      "Nothing is saved anywhere",
+      "Scores and attempts can be tracked on the results / dashboard pages",
+      "Only the first attempt is stored forever",
+      "Results are emailed but not visible in the app",
     ],
-    answer: "Retry or create your own quiz",
+    answer:
+      "Scores and attempts can be tracked on the results / dashboard pages",
     explanation:
-      "The demo flow encourages retaking for practice and onboarding via creating your own AI-generated quiz.",
+      "QuizTheory records attempts so you can review performance later from the My Results / dashboard views.",
   },
 ];
 
+// Simple answer-shuffler that keeps the correct answer string intact.
+function randomizeQuestions(src: DemoQuestion[]): DemoQuestion[] {
+  return src.map((q) => {
+    const opts = [...q.options];
+    // Fisher–Yates shuffle
+    for (let i = opts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [opts[i], opts[j]] = [opts[j], opts[i]];
+    }
+    return { ...q, options: opts };
+  });
+}
+
 export default function DemoQuizPage() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<
+  // We randomise once on mount so positions stay stable for this playthrough.
+  const [questions] = React.useState<DemoQuestion[]>(() =>
+    randomizeQuestions(BASE_QUESTIONS)
+  );
+
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [selectedOption, setSelectedOption] = React.useState<string | null>(
+    null
+  );
+  const [showAnswer, setShowAnswer] = React.useState(false);
+  const [finished, setFinished] = React.useState(false);
+
+  const [answers, setAnswers] = React.useState<
     Record<number, { chosen: string; correct: boolean }>
   >({});
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [finished, setFinished] = useState(false);
+
+  const total = questions.length;
+  const q = questions[currentIndex];
+
+  const correctCount = Object.values(answers).filter((a) => a.correct).length;
+  const percent = total ? Math.round((correctCount / total) * 100) : 0;
+  const progressPercent =
+    total && !finished ? ((currentIndex + 1) / total) * 100 : 100;
 
   function handleSelect(option: string) {
-    if (selectedOption) return; // already answered this question
-    const q = DEMO_QUESTIONS[currentIndex];
+    if (showAnswer) return;
     const correct = option === q.answer;
-
     setSelectedOption(option);
+    setShowAnswer(true);
     setAnswers((prev) => ({
       ...prev,
       [currentIndex]: { chosen: option, correct },
     }));
-    setShowExplanation(true);
   }
 
   function handleNext() {
-    if (currentIndex + 1 < DEMO_QUESTIONS.length) {
+    if (currentIndex + 1 < total) {
       setCurrentIndex((i) => i + 1);
       setSelectedOption(null);
-      setShowExplanation(false);
+      setShowAnswer(false);
     } else {
       setFinished(true);
     }
   }
 
   function handleRetry() {
-    setCurrentIndex(0);
-    setSelectedOption(null);
-    setAnswers({});
-    setShowExplanation(false);
     setFinished(false);
+    setSelectedOption(null);
+    setShowAnswer(false);
+    setAnswers({});
+    setCurrentIndex(0);
   }
-
-  const total = DEMO_QUESTIONS.length;
-  const correctCount = Object.values(answers).filter((a) => a.correct).length;
-  const percent = total ? Math.round((correctCount / total) * 100) : 0;
-  const progressPercent =
-    total && !finished ? ((currentIndex + 1) / total) * 100 : 100;
 
   return (
     <AppShell>
       <PageContainer>
-        {/* Hero header */}
+        {/* Hero header – matches main quiz header style */}
         <section className="pt-2 lg:pt-0">
           <div className="mx-auto max-w-6xl text-center">
             <h1 className="text-2xl font-semibold leading-tight sm:text-3xl md:text-4xl lg:text-5xl">
@@ -133,21 +172,18 @@ export default function DemoQuizPage() {
           </div>
         </section>
 
-        {/* Main content card */}
+        {/* Main content card – styled like the real quiz-taking page */}
         <div className="mx-auto max-w-xl pt-10">
-          <Card className="w-full rounded-2xl border border-white/5 bg-card/70 shadow-lg">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Live demo experience
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="py-4 px-4 sm:px-6">
-              {!finished && (
-                <div className="space-y-5">
-                  {/* Progress + question meta */}
-                  <div className="space-y-2">
+          <Card className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/70 shadow-lg">
+            {!finished ? (
+              <>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base sm:text-lg text-zinc-100">
+                    Live demo experience
+                  </CardTitle>
+                  <div className="mt-2 space-y-1">
                     <div className="text-xs uppercase tracking-wide text-zinc-500">
-                      Question {currentIndex + 1} of {DEMO_QUESTIONS.length}
+                      Question {currentIndex + 1} of {total}
                     </div>
                     <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
                       <div
@@ -156,89 +192,80 @@ export default function DemoQuizPage() {
                       />
                     </div>
                   </div>
-
-                  {/* Question + options */}
-                  <div className="space-y-4">
-                    <div className="text-base font-medium leading-relaxed text-zinc-100">
-                      {DEMO_QUESTIONS[currentIndex].question}
-                    </div>
-                    <div className="grid gap-2">
-                      {DEMO_QUESTIONS[currentIndex].options.map((opt) => {
-                        const answered = !!selectedOption;
-                        const isChosen = selectedOption === opt;
-                        const q = DEMO_QUESTIONS[currentIndex];
-                        const isCorrectAnswer = answered && opt === q.answer;
-                        const isIncorrectChosen =
-                          answered && isChosen && opt !== q.answer;
-
-                        return (
-                          <Button
-                            key={opt}
-                            variant="secondary"
-                            disabled={answered}
-                            onClick={() => handleSelect(opt)}
-                            className={[
-                              "justify-start text-left whitespace-normal h-auto py-3 px-4",
-                              isCorrectAnswer
-                                ? "border-green-600 bg-green-600/20"
-                                : "",
-                              isIncorrectChosen
-                                ? "border-red-600 bg-red-600/20"
-                                : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                          >
-                            {opt}
-                          </Button>
-                        );
-                      })}
-                    </div>
-
-                    {showExplanation && (
-                      <div className="rounded-md border border-zinc-800 bg-zinc-900 p-3 text-sm">
-                        <div className="mb-1 font-medium text-zinc-100">
-                          Explanation
-                        </div>
-                        <div className="whitespace-pre-line text-zinc-300">
-                          {DEMO_QUESTIONS[currentIndex].explanation ||
-                            "No explanation provided."}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedOption && (
-                      <div className="flex gap-3">
-                        <Button onClick={handleNext}>
-                          {currentIndex + 1 === DEMO_QUESTIONS.length
-                            ? "Finish"
-                            : "Next"}
+                </CardHeader>
+                <CardContent className="space-y-4 py-6 px-4 sm:px-8">
+                  <div className="text-base sm:text-lg font-medium text-zinc-100">
+                    {q.question}
+                  </div>
+                  <div className="grid gap-2">
+                    {q.options.map((opt) => {
+                      const isCorrect = opt === q.answer;
+                      const isSelected = selectedOption === opt;
+                      let classes = "";
+                      if (showAnswer) {
+                        if (isCorrect) {
+                          classes =
+                            "bg-green-600 text-white hover:bg-green-600/90";
+                        } else if (isSelected && !isCorrect) {
+                          classes = "bg-red-600 text-white hover:bg-red-600/90";
+                        }
+                      }
+                      return (
+                        <Button
+                          key={opt}
+                          className={classes}
+                          onClick={() => handleSelect(opt)}
+                          disabled={showAnswer}
+                        >
+                          {opt}
                         </Button>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
-                </div>
-              )}
-
-              {finished && (
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="text-xl font-semibold text-zinc-100">
-                      Demo results
+                  {showAnswer && (
+                    <div className="mt-4 text-sm text-zinc-300 bg-zinc-900/70 border border-zinc-800 rounded-md p-3">
+                      <span className="font-medium text-zinc-200">
+                        Explanation:
+                      </span>{" "}
+                      {q.explanation || "No explanation provided."}
                     </div>
-                    <div className="text-sm text-zinc-400">
-                      You scored {correctCount} / {total} ({percent}%).
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Button onClick={handleRetry}>Try again</Button>
-                    <Button asChild variant="secondary">
-                      <Link href="/auth">Create your own quiz</Link>
+                  )}
+                </CardContent>
+                <CardFooter className="flex w-full justify-end">
+                  {showAnswer && (
+                    <Button onClick={handleNext}>
+                      {currentIndex + 1 === total ? "Finish demo" : "Next"}
                     </Button>
+                  )}
+                </CardFooter>
+              </>
+            ) : (
+              <>
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold text-zinc-100">
+                    Demo complete
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 py-6 px-4 sm:px-8">
+                  <div className="text-sm text-zinc-300">
+                    You scored {correctCount} / {total} ({percent}%).
                   </div>
-                </div>
-              )}
-            </CardContent>
+                  <div className="text-sm text-zinc-400">
+                    In the full app, these attempts are saved to your{" "}
+                    <span className="font-medium text-zinc-200">
+                      My results
+                    </span>{" "}
+                    page and can be linked to classes.
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-wrap gap-3">
+                  <Button onClick={handleRetry}>Try again</Button>
+                  <Button asChild variant="secondary">
+                    <Link href="/auth">Create your own quiz</Link>
+                  </Button>
+                </CardFooter>
+              </>
+            )}
           </Card>
 
           <div className="mt-6 text-center text-xs text-zinc-500">

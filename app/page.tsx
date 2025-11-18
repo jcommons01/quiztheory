@@ -16,7 +16,6 @@ export const metadata = {
 };
 
 // Marketing / landing homepage – aligned with new dashboard layout
-
 export default function Home() {
   return (
     <AppShell>
@@ -123,7 +122,7 @@ export default function Home() {
             </Card>
           </section>
 
-          {/* MOCKUP / EXPLAINER */}
+          {/* SEE IT IN ACTION – REALISTIC EDITOR + QUIZ UI */}
           <section className="mx-auto w-full max-w-4xl">
             <Card className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-900/90">
               {/* subtle glows */}
@@ -141,20 +140,181 @@ export default function Home() {
                   See it in action
                 </CardTitle>
                 <CardDescription className="mb-4 text-sm text-slate-400 md:text-base">
-                  Preview the QuizTheory interface.
+                  Preview how QuizTheory turns raw content into a polished quiz.
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="relative">
                 <p className="mb-6 max-w-2xl text-sm leading-relaxed text-slate-300 md:text-base">
-                  Generate quizzes from dense technical material, compliance
-                  manuals, language notes, or onboarding guides. This is a
-                  preview of the interface that turns raw content into smart
-                  assessments.
+                  Paste notes on the left, review and edit the AI-generated
+                  questions, then play through the quiz on the right. What you
+                  see here matches the real editor and quiz player in the app.
                 </p>
-                <div className="rounded-xl border border-white/10 bg-zinc-900/80 shadow-lg">
-                  {/* Placeholder mock interface block */}
-                  <div className="h-48 rounded-xl bg-zinc-900" />
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {/* LEFT: EDITOR PREVIEW (matches /quiz/create styling) */}
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 sm:p-5 shadow-lg">
+                    <div className="mb-4 flex items-center justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-zinc-100">
+                          Quiz Preview
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          Review and edit questions before saving.
+                        </div>
+                      </div>
+                      <div className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/30">
+                        AI ready
+                      </div>
+                    </div>
+
+                    {/* Title field */}
+                    <div className="mb-4 space-y-1">
+                      <div className="text-xs font-medium text-zinc-400">
+                        Quiz title
+                      </div>
+                      <div className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200">
+                        Natural Gas Basics
+                      </div>
+                    </div>
+
+                    {/* Question card (matches your /quiz/create layout in miniature) */}
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-3 sm:p-4 space-y-4">
+                      <div className="text-xs font-semibold text-zinc-300">
+                        Question 1
+                      </div>
+
+                      {/* Question text */}
+                      <div className="space-y-1">
+                        <div className="text-xs font-medium text-zinc-400">
+                          Question text
+                        </div>
+                        <div className="min-h-[56px] rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200">
+                          What is the primary component of natural gas?
+                        </div>
+                      </div>
+
+                      {/* Options with radio buttons */}
+                      <div className="space-y-2">
+                        <div className="text-xs text-zinc-400">
+                          Options (mark the correct one)
+                        </div>
+                        {["Propane", "Methane", "Butane", "Ethane"].map(
+                          (opt, idx) => (
+                            <div
+                              key={opt}
+                              className="flex items-center gap-3 text-xs"
+                            >
+                              <span
+                                className={[
+                                  "inline-flex size-4 items-center justify-center rounded-full border",
+                                  opt === "Methane"
+                                    ? "border-emerald-500 bg-emerald-500"
+                                    : "border-zinc-600 bg-zinc-900",
+                                ].join(" ")}
+                              >
+                                {opt === "Methane" && (
+                                  <span className="size-1.5 rounded-full bg-zinc-950" />
+                                )}
+                              </span>
+                              <div className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-zinc-200">
+                                {opt}
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                      {/* Explanation field */}
+                      <div className="space-y-1">
+                        <div className="text-xs font-medium text-zinc-400">
+                          Explanation
+                        </div>
+                        <div className="min-h-[52px] rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-[11px] leading-relaxed text-zinc-300">
+                          Natural gas is primarily composed of methane, which is
+                          a simple hydrocarbon.
+                        </div>
+                        <p className="text-[10px] text-zinc-500">
+                          Shown to learners after they answer.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        className="h-8 px-4 text-xs font-medium"
+                      >
+                        Save quiz
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-4 text-xs font-medium"
+                      >
+                        Regenerate with AI
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* RIGHT: QUIZ PLAYER PREVIEW (matches /quiz/[id]) */}
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 sm:p-5 shadow-lg">
+                    <div className="mb-4 flex items-center justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-zinc-100">
+                          Quiz player
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          What learners see when they take your quiz.
+                        </div>
+                      </div>
+                      <div className="rounded-full bg-zinc-900 px-3 py-1 text-xs text-zinc-400 border border-zinc-800">
+                        Question 1 / 10
+                      </div>
+                    </div>
+
+                    <div className="mx-auto max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/80 px-4 py-5 space-y-4">
+                      <div className="text-sm font-medium text-zinc-50 text-center">
+                        What is the primary component of natural gas?
+                      </div>
+
+                      <div className="space-y-2">
+                        {/* Correct selected option */}
+                        <button className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white">
+                          Methane
+                        </button>
+                        {/* Other options (disabled / grey like real UI) */}
+                        <button className="w-full rounded-md bg-zinc-800 px-4 py-2 text-sm text-zinc-200">
+                          Ethane
+                        </button>
+                        <button className="w-full rounded-md bg-zinc-800 px-4 py-2 text-sm text-zinc-200">
+                          Propane
+                        </button>
+                        <button className="w-full rounded-md bg-zinc-800 px-4 py-2 text-sm text-zinc-200">
+                          Butane
+                        </button>
+                      </div>
+
+                      <div className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-3 text-xs leading-relaxed text-zinc-300">
+                        <span className="font-semibold text-emerald-400">
+                          Explanation:
+                        </span>{" "}
+                        Natural gas is primarily composed of methane, which is a
+                        simple hydrocarbon.
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button className="rounded-md bg-zinc-100 px-4 py-1.5 text-xs font-medium text-zinc-900 hover:bg-white">
+                          Next
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between text-[11px] text-zinc-500">
+                      <span>Scores saved to your dashboard.</span>
+                      <span>No extra setup needed.</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
