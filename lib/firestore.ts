@@ -206,10 +206,14 @@ export async function getClassAssignments(classId: string): Promise<QuizAssignme
 export interface QuizResult {
   id?: string;
   userId: string;
+  userEmail?: string;
+  classId?: string;
   quizId: string;
   assignmentId?: string;
   score: number;
   total: number;
+  maxScore?: number;
+  attemptNumber?: number;
   createdAt: number;
   quizTitle?: string;
 }
@@ -217,29 +221,31 @@ export interface QuizResult {
 export async function saveQuizResult(data: Omit<QuizResult, "id" | "createdAt">): Promise<QuizResult> {
   // Firestore rejects fields with explicit undefined; omit optional fields when undefined
   const createdAt = Date.now();
-  const payload: {
-    userId: string;
-    quizId: string;
-    score: number;
-    total: number;
-    assignmentId?: string;
-    createdAt: number;
-    quizTitle?: string;
-  } = {
+  const payload: any = {
     userId: data.userId,
     quizId: data.quizId,
     score: data.score,
     total: data.total,
     createdAt,
   };
-  if (data.assignmentId) {
-    payload.assignmentId = data.assignmentId;
-  }
-  if (data.quizTitle) {
-    payload.quizTitle = data.quizTitle;
-  }
+  if (data.userEmail) payload.userEmail = data.userEmail;
+  if (data.classId) payload.classId = data.classId;
+  if (data.assignmentId) payload.assignmentId = data.assignmentId;
+  if (data.quizTitle) payload.quizTitle = data.quizTitle;
+  if (typeof data.maxScore === 'number') payload.maxScore = data.maxScore;
+  if (typeof data.attemptNumber === 'number') payload.attemptNumber = data.attemptNumber;
   const ref = await addDoc(collection(db, "quizResults"), payload);
   return { id: ref.id, ...payload };
+}
+
+// Helper to get the next attempt number for a user+quiz+class combo
+export async function getNextAttemptNumber({ userId, quizId, classId }: { userId: string; quizId: string; classId?: string }): Promise<number> {
+  let q = query(collection(db, "quizResults"), where("userId", "==", userId), where("quizId", "==", quizId));
+  if (classId) {
+    q = query(q, where("classId", "==", classId));
+  }
+  const snap = await getDocs(q);
+  return snap.size + 1;
 }
 
 // Result queries --------------------------------------------------

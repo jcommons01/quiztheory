@@ -300,12 +300,35 @@ export default function QuizTakingPage() {
 
     const run = async () => {
       try {
+        const userId = auth.currentUser!.uid;
+        const userEmail = auth.currentUser!.email || undefined;
+        // Determine classId if present (from assignment context)
+        let classId: string | undefined = undefined;
+        if (assignmentId) {
+          // Try to fetch assignment to get classId
+          try {
+            const assignmentSnap = await import("firebase/firestore").then(({ doc, getDoc }) => getDoc(doc(db, "assignments", assignmentId)));
+            if (assignmentSnap?.exists()) {
+              classId = assignmentSnap.data().classId;
+            }
+          } catch {}
+        }
+        // Calculate attemptNumber
+        let attemptNumber: number | undefined = undefined;
+        try {
+          const { getNextAttemptNumber } = await import("@/lib/firestore");
+          attemptNumber = await getNextAttemptNumber({ userId, quizId: String(id), classId });
+        } catch {}
         await saveQuizResult({
-          userId: auth.currentUser!.uid,
+          userId,
+          userEmail,
+          classId,
           quizId: String(id),
           assignmentId,
           score,
           total,
+          maxScore: total, // maxScore is total questions
+          attemptNumber,
           quizTitle: quiz?.title || "Untitled quiz",
         });
       } catch (e) {

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/firebase";
 import {
   getUserProfile,
@@ -323,7 +324,12 @@ export default function ClassResultsPage() {
                               className="border-t border-white/5 bg-background/40 hover:bg-white/[0.04]"
                             >
                               <td className="px-3 py-2 font-mono text-xs text-zinc-200">
-                                {r.userId}
+                                <Link
+                                  href={`/classes/${classId}/students/${r.userId}`}
+                                  className="text-blue-400 hover:underline"
+                                >
+                                  {r.userEmail || r.userId}
+                                </Link>
                               </td>
                               <td className="px-3 py-2 text-zinc-100">
                                 {r.assignmentId
