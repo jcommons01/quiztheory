@@ -11,9 +11,9 @@ export default function TopNav() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="flex h-9 w-9 items-center justify-center rounded-md bg-zinc-900 border border-zinc-800 text-sm font-bold tracking-wide text-zinc-100 group-hover:border-zinc-700 transition-colors">
-            QT
+            QR
           </div>
-          <span className="text-sm md:text-base font-semibold text-zinc-100 group-hover:text-zinc-50 transition-colors">QuizTheory</span>
+          <span className="text-sm md:text-base font-semibold text-zinc-100 group-hover:text-zinc-50 transition-colors">QuizRevise</span>
         </Link>
         {/* Nav Links */}
         <div className="flex items-center gap-2 md:gap-4">
