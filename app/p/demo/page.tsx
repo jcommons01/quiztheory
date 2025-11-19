@@ -12,6 +12,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface DemoQuestion {
   question: string;
@@ -20,11 +21,11 @@ interface DemoQuestion {
   explanation?: string;
 }
 
-// These are product-style questions that describe how QuizTheory works.
+// These are product-style questions that describe how QuizRevise works.
 // You can tweak wording to exactly match your marketing copy.
 const BASE_QUESTIONS: DemoQuestion[] = [
   {
-    question: "What is the main benefit of using QuizTheory for revision?",
+    question: "What is the main benefit of using QuizRevise for revision?",
     options: [
       "It prints worksheets automatically",
       "It turns your own notes into auto-marked quizzes in seconds",
@@ -33,11 +34,11 @@ const BASE_QUESTIONS: DemoQuestion[] = [
     ],
     answer: "It turns your own notes into auto-marked quizzes in seconds",
     explanation:
-      "QuizTheory takes your notes, PDFs or images and generates structured, self-marking quizzes from them.",
+      "QuizRevise takes your notes, PDFs or images and generates structured, self-marking quizzes from them.",
   },
   {
     question:
-      "Which types of content can you turn into quizzes with QuizTheory?",
+      "Which types of content can you turn into quizzes with QuizRevise?",
     options: [
       "Only plain text typed by hand",
       "Notes, PDFs, and textbook or worksheet photos",
@@ -50,7 +51,7 @@ const BASE_QUESTIONS: DemoQuestion[] = [
   },
   {
     question:
-      "What can you do on the QuizTheory quiz editor screen after generation?",
+      "What can you do on the QuizRevise quiz editor screen after generation?",
     options: [
       "Only delete the quiz",
       "Edit questions, change options, and update explanations",
@@ -63,7 +64,7 @@ const BASE_QUESTIONS: DemoQuestion[] = [
   },
   {
     question:
-      "How does sharing a quiz with a class or friend usually work in QuizTheory?",
+      "How does sharing a quiz with a class or friend usually work in QuizRevise?",
     options: [
       "You must export a PDF and email it",
       "You send them a public quiz link they can open instantly",
@@ -86,7 +87,7 @@ const BASE_QUESTIONS: DemoQuestion[] = [
     answer:
       "Scores and attempts can be tracked on the results / dashboard pages",
     explanation:
-      "QuizTheory records attempts so you can review performance later from the My Results / dashboard views.",
+      "QuizRevise records attempts so you can review performance later from the My Results / dashboard views.",
   },
 ];
 
@@ -103,11 +104,14 @@ function randomizeQuestions(src: DemoQuestion[]): DemoQuestion[] {
   });
 }
 
+
 export default function DemoQuizPage() {
-  // We randomise once on mount so positions stay stable for this playthrough.
-  const [questions] = React.useState<DemoQuestion[]>(() =>
-    randomizeQuestions(BASE_QUESTIONS)
-  );
+  // Fix hydration: shuffle only on client after mount
+  const [questions, setQuestions] = React.useState<DemoQuestion[]>(BASE_QUESTIONS);
+  React.useEffect(() => {
+    setQuestions(randomizeQuestions(BASE_QUESTIONS));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [selectedOption, setSelectedOption] = React.useState<string | null>(
@@ -164,7 +168,7 @@ export default function DemoQuizPage() {
         <section className="pt-2 lg:pt-0">
           <div className="mx-auto max-w-6xl text-center">
             <h1 className="text-2xl font-semibold leading-tight sm:text-3xl md:text-4xl lg:text-5xl">
-              QuizTheory Demo Quiz
+              QuizRevise Demo Quiz
             </h1>
             <p className="mt-4 text-sm text-slate-400 md:text-base">
               Try this interactive demo — no sign-up required.
@@ -198,29 +202,33 @@ export default function DemoQuizPage() {
                     {q.question}
                   </div>
                   <div className="grid gap-2">
-                    {q.options.map((opt) => {
-                      const isCorrect = opt === q.answer;
-                      const isSelected = selectedOption === opt;
-                      let classes = "";
-                      if (showAnswer) {
-                        if (isCorrect) {
-                          classes =
-                            "bg-green-600 text-white hover:bg-green-600/90";
-                        } else if (isSelected && !isCorrect) {
-                          classes = "bg-red-600 text-white hover:bg-red-600/90";
+                    {(() => {
+                      const baseButtonClasses =
+                        "w-full whitespace-normal break-words text-center leading-normal text-sm sm:text-base";
+                      return q.options.map((opt) => {
+                        const isCorrect = opt === q.answer;
+                        const isSelected = selectedOption === opt;
+                        let classes = "";
+                        if (showAnswer) {
+                          if (isCorrect) {
+                            classes =
+                              "bg-green-600 text-white hover:bg-green-600/90";
+                          } else if (isSelected && !isCorrect) {
+                            classes = "bg-red-600 text-white hover:bg-red-600/90";
+                          }
                         }
-                      }
-                      return (
-                        <Button
-                          key={opt}
-                          className={classes}
-                          onClick={() => handleSelect(opt)}
-                          disabled={showAnswer}
-                        >
-                          {opt}
-                        </Button>
-                      );
-                    })}
+                        return (
+                          <Button
+                            key={opt}
+                            className={cn(baseButtonClasses, classes)}
+                            onClick={() => handleSelect(opt)}
+                            disabled={showAnswer}
+                          >
+                            {opt}
+                          </Button>
+                        );
+                      });
+                    })()}
                   </div>
                   {showAnswer && (
                     <div className="mt-4 text-sm text-zinc-300 bg-zinc-900/70 border border-zinc-800 rounded-md p-3">
